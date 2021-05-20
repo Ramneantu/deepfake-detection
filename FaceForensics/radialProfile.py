@@ -1,6 +1,8 @@
 # from https://www.astrobetter.com/blog/2010/03/03/fourier-transforms-of-images-in-python/
 import numpy as np
 
+# Authors of this file: Ricard Durall, Janis Keuper
+# Edited in the context of the EAI Praktikum SoSe2021
 
 def azimuthalAverage(image, center=None):
     """
