@@ -68,17 +68,17 @@ def main():
 
         # piecewise affine transform and blur
         warped = piecewise_affine_transform(hullMask, anchors, deformedAnchors) # size (h, w) warped mask
-        blured = cv2.GaussianBlur(warped, (5,5), 3)
+        blurred = cv2.GaussianBlur(warped, (5,5), 3)
 
         # swap
         left, up, right, bot = min(srcLms[:,0]), min(srcLms[:,1]), max(srcLms[:,0]), max(srcLms[:,1])
         targetBgrT = color_transfer(srcFaceBgr[up:bot,left:right,:], targetBgr)
-        resultantFace = forge(srcFaceBgr, targetBgrT, blured) # forged face
+        resultantFace = forge(srcFaceBgr, targetBgrT, blurred) # forged face
 
         # save face images
         cv2.imwrite(f'./dump/mask_{i}.jpg', hullMask)
         cv2.imwrite(f'./dump/deformed_{i}.jpg', warped*255)
-        cv2.imwrite(f'./dump/blured_{i}.jpg', blured*255)
+        cv2.imwrite(f'./dump/blurred_{i}.jpg', blurred*255)
         cv2.imwrite(f'./dump/src_{i}.jpg', srcFaceBgr)
         cv2.imwrite(f'./dump/target_{i}.jpg', targetBgr)
         cv2.imwrite(f'./dump/target_T_{i}.jpg', targetBgrT)
@@ -144,7 +144,9 @@ def random_deform(imageSize, nrows, ncols, mean=0, std=5):
     rows, cols = np.meshgrid(rows, cols)
     anchors = np.vstack([rows.flat, cols.flat]).T
     assert anchors.shape[1] == 2 and anchors.shape[0] == ncols * nrows
+    # random Gaussian shift of x and y values
     deformed = anchors + np.random.normal(mean, std, size=anchors.shape)
+    # clipping: points should stay in image space
     np.clip(deformed[:,0], 0, h-1, deformed[:,0])
     np.clip(deformed[:,1], 0, w-1, deformed[:,1])
     return anchors, deformed.astype(np.int32)
