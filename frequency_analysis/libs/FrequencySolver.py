@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 from . import commons
-import os
 import glob
 from matplotlib import pyplot as plt
 import pickle
@@ -9,6 +8,7 @@ from scipy.interpolate import griddata
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
+from absl import logging
 
 
 class FrequencySolver:
@@ -124,13 +124,13 @@ class FrequencySolver:
 
         return data, label
 
-    def train(self, split_dataset: bool = True, test_set = None, iter: int = 10):
+    def train(self, split_dataset: bool = True, test_file: str = 'dataset.pkl', iterations: int = 10):
         """
         This is the training function that uses shallow ml classifiers.
         :param split_dataset: If split is True, the function splits one dataset and uses 20% of it for testing. Else, you
         need to provide a separate test set
-        :param test_set: pickle object if split_dataset is True
-        :param iter: If the dataset is split, perform iter number of iterations. In each iteration the a different test
+        :param test_file: pickle object if split_dataset is True
+        :param iterations: If the dataset is split, perform iter number of iterations. In each iteration the a different test
         set is chosen.
 
         Output: (average) accuracy using four different classifiers
@@ -140,15 +140,42 @@ class FrequencySolver:
         y = self.data["label"]
 
         if split_dataset is False:
-            pass
+            X_train = X
+            y_train = y
+
+            # load pickle object
+            pkl_file = open('./data/' + test_file, 'rb')
+            loaded_data = pickle.load(pkl_file)
+            pkl_file.close()
+
+            # load data and labels
+            X_test = loaded_data["data"]
+            y_test = loaded_data["label"]
+
+            svclassifier = SVC(kernel='linear')
+            svclassifier.fit(X_train, y_train)
+
+            svclassifier_r = SVC(C=6.37, kernel='rbf', gamma=0.86)
+            svclassifier_r.fit(X_train, y_train)
+
+            svclassifier_p = SVC(kernel='poly')
+            svclassifier_p.fit(X_train, y_train)
+
+            logreg = LogisticRegression(solver='liblinear', max_iter=1000)
+            logreg.fit(X_train, y_train)
+
+            SVM = svclassifier.score(X_test, y_test)
+            SVM_r = svclassifier_r.score(X_test, y_test)
+            SVM_p = svclassifier_p.score(X_test, y_test)
+            LR = logreg.score(X_test, y_test)
+
         else:
             LR = 0
             SVM = 0
             SVM_r = 0
             SVM_p = 0
 
-
-            for i in range(iter):
+            for i in range(iterations):
                 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
                 svclassifier = SVC(kernel='linear')
@@ -168,12 +195,15 @@ class FrequencySolver:
                 SVM_p += svclassifier_p.score(X_test, y_test)
                 LR += logreg.score(X_test, y_test)
 
-        print("Average SVM: " + str(SVM / iter))
-        print("Average SVM_r: " + str(SVM_r / iter))
-        print("Average SVM_p: " + str(SVM_p / iter))
-        print("Average LR: " + str(LR / iter))
+        print("(Average) SVM: " + str(SVM / iterations))
+        print("(Average) SVM_r: " + str(SVM_r / iterations))
+        print("(Average) SVM_p: " + str(SVM_p / iterations))
+        print("(Average) LR: " + str(LR / iterations))
 
     def visualize(self):
+        """
+        Plot the features of the real and fake images together.
+        """
         x = np.arange(0, self.features, 1)
         fig, ax = plt.subplots(figsize=(15, 9))
         ax.plot(x, self.mean["fakes"], alpha=0.5, color='red', label='Fake', linewidth=2.0)
@@ -189,3 +219,13 @@ class FrequencySolver:
         plt.xlabel("Spatial Frequency", fontsize=20)
         plt.ylabel("Power Spectrum", fontsize=20)
         plt.show()
+
+    def save_dataset(self, file_name: str = 'dataset'):
+        if file_name == 'dataset':
+            logging.warning('No specific name given to save weights')
+        output_name = './data/' + file_name
+        output = open(output_name, 'wb')
+        pickle.dump(self.data, output)
+        output.close()
+
+        logging.info("Data saved in {}".format(output_name))
