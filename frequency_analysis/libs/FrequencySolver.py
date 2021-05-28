@@ -31,7 +31,6 @@ class FrequencySolver:
         self.num_iter = num_iter
         self.features = features
         self.epsilon = epsilon
-        self.saved_data = None
         self.data = {}
         self.mean = {}
         self.std = {}
@@ -48,7 +47,7 @@ class FrequencySolver:
         :param crop: set to true if while processing you wish to crop the face area
         """
         # sanity checks
-        if compute_data is True and (reals_path is None) or (fakes_path is None):
+        if compute_data is True and ((reals_path is None) or (fakes_path is None)):
             raise Exception('No data path given')
 
         if compute_data is False and saved_data is None:
@@ -63,14 +62,14 @@ class FrequencySolver:
             self.data["label"] = np.concatenate((reals_label, fakes_label), axis=0)
         else:
             # if features have been precomputed, load them
-            pkl_file = open(saved_data)
+            pkl_file = open('./data/' + saved_data, 'rb')
             loaded_data = pickle.load(pkl_file)
             pkl_file.close()
             # load data and labels
             self.data["data"] = new_data = loaded_data["data"]
             self.data["label"] = loaded_data["label"]
             # separate real and fake data
-            mid_index = new_data.shape[0] / 2
+            mid_index = new_data.shape[0] // 2
             reals_data = new_data[:mid_index, :]
             fakes_data = new_data[mid_index:, :]
 
@@ -140,6 +139,8 @@ class FrequencySolver:
         y = self.data["label"]
 
         if split_dataset is False:
+            iterations = 1
+
             X_train = X
             y_train = y
 

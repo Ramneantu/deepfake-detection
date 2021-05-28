@@ -1,12 +1,5 @@
-import cv2
-import numpy as np
-from libs.commons import get_frequencies
+
 from libs.FrequencySolver import FrequencySolver
-import os
-import glob
-from matplotlib import pyplot as plt
-import pickle
-from scipy.interpolate import griddata
 from absl import app, flags, logging
 from absl.flags import FLAGS
 
@@ -36,10 +29,13 @@ def main(_argv):
     logging.info("Initialization finished")
 
     solver_object.train(test_file=FLAGS.test_file, split_dataset=FLAGS.split_dataset)
+    logging.info("Training finied")
+
     solver_object.visualize()
 
     if FLAGS.save_dataset:
         solver_object.save_dataset(file_name=FLAGS.saved_file_name)
+        logging.info("Weights saved")
 
 
 if __name__ == '__main__':
