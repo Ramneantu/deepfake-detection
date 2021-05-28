@@ -8,7 +8,8 @@ from scipy.interpolate import griddata
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
-from absl import logging
+from absl import app, flags, logging
+from absl.flags import FLAGS
 
 
 class FrequencySolver:
@@ -56,8 +57,8 @@ class FrequencySolver:
         # compute data or load data
         if compute_data is True:
             # fake data has label 0 and real data has label 1
-            reals_data, reals_label = self.compute_data(reals_path, label=1)
-            fakes_data, fakes_label = self.compute_data(fakes_path, label=0)
+            reals_data, reals_label = self.compute_data(reals_path, label=1, crop=crop)
+            fakes_data, fakes_label = self.compute_data(fakes_path, label=0, crop=crop)
             self.data["data"] = np.concatenate((reals_data, fakes_data), axis=0)
             self.data["label"] = np.concatenate((reals_label, fakes_label), axis=0)
         else:
@@ -90,6 +91,8 @@ class FrequencySolver:
         :return:  data : ndarray of shape num_iter x features, processed data
                   labels:  ndarray of shape num_iter, correct label for each image
         """
+        print("Started processing dataset at location {}".format(path))
+        print("Processed 0/{} images".format(self.num_iter))
         if label == 1:
             label = np.ones([self.num_iter])
         else:
@@ -118,8 +121,12 @@ class FrequencySolver:
             file_num += 1
 
             if file_num == self.num_iter:
-                print()
+                print("Processed {}/{} images".format(file_num, self.num_iter))
+                print("Finished processing dataset\n")
                 break
+
+            if file_num % 50 == 0:
+                print("Processed {}/{} images".format(file_num, self.num_iter))
 
         return data, label
 
@@ -134,7 +141,7 @@ class FrequencySolver:
 
         Output: (average) accuracy using four different classifiers
         """
-
+        print("Training started!")
         X = self.data["data"]
         y = self.data["label"]
 
@@ -201,6 +208,14 @@ class FrequencySolver:
         print("(Average) SVM_p: " + str(SVM_p / iterations))
         print("(Average) LR: " + str(LR / iterations))
 
+        if FLAGS.save_results:
+            f = open('./data/results.txt', 'a+')
+            f.write("Results for experiment 1\n" +
+                    "(Average) SVM: " + str(SVM / iterations) + '\n' +
+                    "(Average) SVM_r: " + str(SVM_r / iterations) + '\n' +
+                    "(Average) SVM_p: " + str(SVM_p / iterations) + '\n' +
+                    "(Average) LR: " + str(LR / iterations) + '\n\n')
+
     def visualize(self):
         """
         Plot the features of the real and fake images together.
@@ -219,7 +234,14 @@ class FrequencySolver:
         ax.legend(loc='best', prop={'size': 20})
         plt.xlabel("Spatial Frequency", fontsize=20)
         plt.ylabel("Power Spectrum", fontsize=20)
+
+        if FLAGS.save_results:
+            save_path = './img/experiment_' + str(FLAGS.experiment_num) + '.png'
+            plt.savefig(save_path)
+
         plt.show()
+
+
 
     def save_dataset(self, file_name: str = 'dataset'):
         if file_name == 'dataset':

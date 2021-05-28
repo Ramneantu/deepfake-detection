@@ -17,19 +17,20 @@ flags.DEFINE_bool('split_dataset', True, 'Set to true if you do not have a separ
 flags.DEFINE_integer('experiment_num', 1, 'If you run multiple experiments, keep track of experiment number')
 flags.DEFINE_bool('save_dataset', False, 'Set to true if you wish to save the computed frequency averages')
 flags.DEFINE_string('saved_file_name', 'dataset', 'Name for saving the dataset, used if save_dataset is true')
+flags.DEFINE_bool('save_results', True, 'Appends results to results.txt and images in img folder')
 
 
 def main(_argv):
     logging.info("App started...experiment {}".format(FLAGS.experiment_num))
+    logging.info("Started preocessing images...")
     solver_object = FrequencySolver(num_iter=FLAGS.num_iter, features=FLAGS.features)
-    # solver_object(reals_path='/home/anaradutoiu/Documents/Sem_2/EAI/projects/DeepFakeDetection/faceforensics/real/c23/jpg-nonresized', fakes_path='/home/anaradutoiu/Documents/Sem_2/EAI/projects/DeepFakeDetection/faceforensics/deepfakes/c23/jpg-nonresized')
 
     solver_object(compute_data=FLAGS.compute_data, reals_path=FLAGS.reals_path, fakes_path=FLAGS.fakes_path,
                   saved_data=FLAGS.saved_data, crop=FLAGS.crop)
     logging.info("Initialization finished")
 
     solver_object.train(test_file=FLAGS.test_file, split_dataset=FLAGS.split_dataset)
-    logging.info("Training finied")
+    logging.info("Training finished")
 
     solver_object.visualize()
 

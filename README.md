@@ -10,3 +10,4 @@ Following libraries are needed to create the conda environment:
 - notebook (for running the jupyter notebook)
 - matplotlib
 - scikit-learn
+- absl-py
