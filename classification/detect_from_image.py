@@ -93,9 +93,9 @@ def test_on_images(real_path, fake_path, model_path, cuda = True):
 def load_model(model_path, cuda = True):
     # Load model
     model, *_ = model_selection(modelname='xception', num_out_classes=2)
+    device = torch.device("cuda:0" if cuda else "cpu")
     if model_path is not None:
-        # model = torch.load(model_path)  # , map_location=torch.device('cpu'))
-        model.load_state_dict(torch.load(model_path))
+        model.load_state_dict(torch.load(model_path, map_location=device))
         for i, param in model.named_parameters():
             param.requires_grad = False
         print('Model found in {}'.format(model_path))
@@ -105,7 +105,7 @@ def load_model(model_path, cuda = True):
     if cuda:
         model = model.cuda()
 
-    device = torch.device("cuda:0" if cuda else "cpu")
+
 
     return model, device
 
@@ -149,7 +149,7 @@ def initialize_dataloaders(img_path):
 
 def setup_training(img_path, model_path, cuda = True):
 
-    model = load_model(model_path, cuda)
+    model, device = load_model(model_path, cuda)
 
     dataloaders_dict = initialize_dataloaders(img_path)
 
@@ -162,7 +162,6 @@ def setup_training(img_path, model_path, cuda = True):
 
     optimizer = optim.SGD(params_to_update, lr=0.001, momentum=0.9)
     criterion = nn.CrossEntropyLoss()
-    device = torch.device("cuda:0" if cuda else "cpu")
 
     return model, dataloaders_dict, criterion, optimizer, device
 
@@ -248,13 +247,14 @@ if __name__ == '__main__':
     # p.add_argument('--fake_path', '-f', type=str)
     p.add_argument('--img_path', '-i', type=str)
     p.add_argument('--model_path', '-mi', type=str, default=None)
+    p.add_argument('--epochs', '-e', type=int, default=5)
     p.add_argument('--cuda', action='store_true')
     args = p.parse_args()
 
     # test_on_images(**vars(args))
     if args.model_path == None:
-        model, dataloaders, criterion, optimizer, device = setup_training(**vars(args))
-        model, *_ = train_model(model, dataloaders, criterion, optimizer, device, 5)
+        model, dataloaders, criterion, optimizer, device = setup_training(args.img_path, args.model_path, args.cuda)
+        model, *_ = train_model(model, dataloaders, criterion, optimizer, device, args.epochs)
         test_model(model, dataloaders)
     else:
         model, device = load_model(args.model_path, args.cuda)
