@@ -13,6 +13,7 @@ def get_frequencies(img: np.ndarray, epsilon: float):
     fshift = np.fft.fftshift(f)
     fshift += epsilon
 
+    # magnitude_spectrum = np.abs(fshift)
     magnitude_spectrum = 20 * np.log(np.abs(fshift))
     psd1D = azimuthal_average(magnitude_spectrum)
 
@@ -38,8 +39,9 @@ def azimuthal_average(image, center=None):
 
     # Compute the distance from each pixel to the center
     r = np.hypot(x - center[0], y - center[1])
+    # r = np.maximum((x-center[0])**2, (y-center[1])**2)
 
-    # Get sorted radii in a flattened array ind: order of indeces such that r.flat[ind](r_sorted) is a sorted version
+    # Get sorted radii in a flattened array ind: order of indices such that r.flat[ind](r_sorted) is a sorted version
     # of r i_sorted: sort the corresponding pixel values we get groups of pixel values grouped together,
     # because they are all equally far from the center => they are on the same radius
     ind = np.argsort(r.flat)

@@ -210,7 +210,8 @@ class FrequencySolver:
 
         if FLAGS.save_results:
             f = open('./data/results.txt', 'a+')
-            f.write("Results for experiment 1\n" +
+            experiment_number = str(FLAGS.experiment_num)
+            f.write("Results for experiment " + experiment_number + "\n" +
                     "(Average) SVM: " + str(SVM / iterations) + '\n' +
                     "(Average) SVM_r: " + str(SVM_r / iterations) + '\n' +
                     "(Average) SVM_p: " + str(SVM_p / iterations) + '\n' +

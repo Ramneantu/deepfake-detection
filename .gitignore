@@ -1,3 +1,3 @@
 .idea
-frequency_analysis/data
-frequency_analysis/img_1
+frequency_analysis/data*
+frequency_analysis/img*
