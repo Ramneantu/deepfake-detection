@@ -123,7 +123,7 @@ def model_selection(modelname, num_out_classes,
     """
     if modelname == 'xception':
         return TransferModel(modelchoice='xception',
-                             num_out_classes=num_out_classes), 299, \
+                             num_out_classes=num_out_classes, dropout=dropout), 299, \
                True, ['image'], None
     elif modelname == 'resnet18':
         return TransferModel(modelchoice='resnet18', dropout=dropout,

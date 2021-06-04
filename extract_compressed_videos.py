@@ -55,9 +55,12 @@ def extract_frames(data_path, output_path, image_prefix, frame_count = 1, method
     elif method == 'cv2':
         reader = cv2.VideoCapture(data_path)
         c = 0
-        s = set(range(frame_count))
-        while c < frame_count:
+        t = 0
+        s = set(range(int(reader.get(cv2.CAP_PROP_FRAME_COUNT))))
+        while c < frame_count and t < int(reader.get(cv2.CAP_PROP_FRAME_COUNT)):
+            t += 1
             frame = random.choice(list(s))
+            s.remove(frame)
             reader.set(1, frame)
             success, image = reader.read()
             if not success:
@@ -73,7 +76,6 @@ def extract_frames(data_path, output_path, image_prefix, frame_count = 1, method
             cv2.imwrite(join(output_path, '{}_{:04d}.jpg'.format(image_prefix, frame)),
                         cropped_face)
             c += 1
-            s.remove(frame)
         reader.release()
     else:
         raise Exception('Wrong extract frames method: {}'.format(method))

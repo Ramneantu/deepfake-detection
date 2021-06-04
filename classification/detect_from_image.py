@@ -1,6 +1,7 @@
 import copy
 import os
 import argparse
+import sys
 import time
 from os.path import join
 import cv2
@@ -18,6 +19,8 @@ import numpy as np
 from network.models import model_selection
 from dataset.transform import xception_default_data_transforms
 from detect_from_video import predict_with_model, get_boundingbox
+
+LEARNING = ['finetuning', 'full']
 
 def test_on_images(real_path, fake_path, model_path, cuda = True):
 
@@ -90,9 +93,9 @@ def test_on_images(real_path, fake_path, model_path, cuda = True):
 
     print("Accuracy: " + str(correct/total))
 
-def load_model(model_path, cuda = True):
+def load_model(model_path, cuda = True, learning = 'finetuning'):
     # Load model
-    model, *_ = model_selection(modelname='xception', num_out_classes=2)
+    model, *_ = model_selection(modelname='xception', num_out_classes=2, dropout=0.5)
     device = torch.device("cuda:0" if cuda else "cpu")
     if model_path is not None:
         model.load_state_dict(torch.load(model_path, map_location=device))
@@ -101,7 +104,10 @@ def load_model(model_path, cuda = True):
         print('Model found in {}'.format(model_path))
     else:
         print('No model found, initializing random model.')
-        model.set_trainable_up_to(False, "last_linear")
+        if learning == 'finetuning':
+            model.set_trainable_up_to(False, "last_linear")
+        else:
+            model.set_trainable_up_to(False, None)
     if cuda:
         model = model.cuda()
 
@@ -137,8 +143,10 @@ def test_model(model, dataloaders, device):
 
     print('Test Acc: {:4f}'.format(test_acc))
 
-def initialize_dataloaders(img_path):
+def initialize_dataloaders(img_path, learning = 'finetuning'):
     batch_size = 32
+    if learning == 'full':
+        batch_size = 8
     # Create training and validation datasets
     image_datasets = {x: datasets.ImageFolder(os.path.join(img_path, x), xception_default_data_transforms[x]) for x in
                       ['train', 'val', 'test']}
@@ -147,11 +155,11 @@ def initialize_dataloaders(img_path):
                         ['train', 'val', 'test']}
     return dataloaders_dict
 
-def setup_training(img_path, model_path, cuda = True):
+def setup_training(img_path, model_path, learning, cuda = True):
 
-    model, device = load_model(model_path, cuda)
+    model, device = load_model(model_path, cuda, learning)
 
-    dataloaders_dict = initialize_dataloaders(img_path)
+    dataloaders_dict = initialize_dataloaders(img_path, learning)
 
     print("Params to learn:")
     params_to_update = []
@@ -160,7 +168,7 @@ def setup_training(img_path, model_path, cuda = True):
             params_to_update.append(param)
             print("\t", name)
 
-    optimizer = optim.SGD(params_to_update, lr=0.001, momentum=0.9)
+    optimizer = optim.Adam(params_to_update, lr=0.001, weight_decay=1e-5)
     criterion = nn.CrossEntropyLoss()
 
     return model, dataloaders_dict, criterion, optimizer, device
@@ -190,7 +198,7 @@ def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25)
             running_corrects = 0
 
             # Iterate over data.
-            for inputs, labels in dataloaders[phase]:
+            for inputs, labels in tqdm(dataloaders[phase], file=sys.stdout):
                 inputs = inputs.to(device)
                 labels = labels.to(device)
 
@@ -219,7 +227,6 @@ def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25)
 
             epoch_loss = running_loss / len(dataloaders[phase].dataset)
             epoch_acc = running_corrects / len(dataloaders[phase].dataset)
-            print()
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc))
 
             # deep copy the model
@@ -247,16 +254,17 @@ if __name__ == '__main__':
     # p.add_argument('--fake_path', '-f', type=str)
     p.add_argument('--img_path', '-i', type=str)
     p.add_argument('--model_path', '-mi', type=str, default=None)
+    p.add_argument('--learning', '-l', type=str, choices=LEARNING, default='finetuning')
     p.add_argument('--epochs', '-e', type=int, default=5)
     p.add_argument('--cuda', action='store_true')
     args = p.parse_args()
 
     # test_on_images(**vars(args))
     if args.model_path == None:
-        model, dataloaders, criterion, optimizer, device = setup_training(args.img_path, args.model_path, args.cuda)
+        model, dataloaders, criterion, optimizer, device = setup_training(args.img_path, args.model_path, args.learning, args.cuda)
         model, *_ = train_model(model, dataloaders, criterion, optimizer, device, args.epochs)
-        test_model(model, dataloaders)
+        test_model(model, dataloaders, device)
     else:
-        model, device = load_model(args.model_path, args.cuda)
+        model, device = load_model(args.model_path, args.cuda, args.learning)
         dataloaders = initialize_dataloaders(args.img_path)
         test_model(model, dataloaders, device)
