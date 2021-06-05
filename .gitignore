@@ -5,3 +5,6 @@ Face-X-Ray-master/.DS_Store
 __pycache__/
 *.py[cod]
 *$py.class
+.idea
+/frequency_analysis/data*
+/frequency_analysis/img*
