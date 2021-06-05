@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 def get_available_masks():
     """ Return a list of the available masks for cli """
+    # all mask variants are declared in this script
     masks = sorted([name for name, obj in inspect.getmembers(sys.modules[__name__])
                     if inspect.isclass(obj) and name != "Mask"])
     masks.append("none")
@@ -29,6 +30,7 @@ def get_available_masks():
 
 def get_default_mask():
     """ Set the default mask for cli """
+    # select one of the defaults (either first one or dfl_full)
     masks = get_available_masks()
     default = "dfl_full"
     default = default if default in masks else masks[0]
@@ -41,7 +43,7 @@ class Mask():
         the output mask will be <mask_type>.mask
         channels: 1, 3 or 4:
                     1 - Returns a single channel mask
-                    3 - Returns a 3 channel mask
+                    3 - Returns a 3 channel mask (same mask just repeated)
                     4 - Returns the original image with the mask in the alpha channel """
 
     def __init__(self, landmarks, face, channels=4):
@@ -56,7 +58,7 @@ class Mask():
         logger.info("Initialized %s", self.__class__.__name__)
 
     def build_mask(self):
-        """ Override to build the mask """
+        """ Override to build the mask"""
         raise NotImplementedError
 
     def merge_mask(self, mask):
