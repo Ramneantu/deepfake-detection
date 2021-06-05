@@ -18,6 +18,7 @@ Steps: paste face B to A
 7. since our images are as similar as possible given the landmarks: use deformed mask from A to extract pixels from B and paste to A (faceswap)
 
 The more complex paper has additional steps:
+
 8. down and up sample again
 9. use jpeg comrpession
 
@@ -31,6 +32,16 @@ Similar transformation and mask generation etc.
 
 But instead of step 2. from before (searching for most similar face), the landmarks of ALL faces are transformed into a normalized space (such that all images look similar)
 --> I don't know how well this approach works, I still need to test this
+
+**Adaption of face xray**
+
+I implemented own pipeline that does:
+- given folder of images, extract all facial landmarks and create dict = {face_id: landmarks} for each image. And store it as json
+- in the utils file, I added a function that searches for the nearest face
+- and does the processing steps as in the old repo
+--> folders of real and fake images; fakes are created regarding the procedure in the paper (and as mentioned above). See Notebooks for reference.
+
+Face-Xray-master
 
 
 **Requirements**
