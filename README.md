@@ -4,7 +4,7 @@
 - third project, CVPRW2019_Face_Artifacts-master:
     - they do a few things differently
 
-** Face-Xray approach: **
+**Face-Xray approach:**
 Given: images of faces, in best case same image sizes and somehow centered
 
 Goal: Given two images, select face region from first one, do some transformations to the select face mask and paste it to second image
@@ -25,7 +25,7 @@ The more complex paper also experiments with different Mask formation algorithms
 
 See Notebooks for reference
 
-** Face-Artifacts approach: **
+**Face-Artifacts approach:**
 
 Similar transformation and mask generation etc.
 
@@ -33,7 +33,7 @@ But instead of step 2. from before (searching for most similar face), the landma
 --> I don't know how well this approach works, I still need to test this
 
 
-** Requirements **
+**Requirements**
 See requirements file here
 There may be some additional packages not needed, but this current environment was created only for the project. So this should be as slim as possible.
 
