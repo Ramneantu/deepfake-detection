@@ -1,14 +1,14 @@
 import dlib
 import os
-import numpy as np
 import json
-from tqdm import tqdm
+import numpy as np
 import utils as ut
+from tqdm import tqdm
 
 trained_pred_path = ("/Users/emrekavak/Documents/Ethical_AI/repo/proj-4/" +
                      "Face-X-Ray-master/shape_predictor_68_face_landmarks.dat")
-landmark_path = "/Users/emrekavak/Desktop/landmarks/"
-img_dir_path = "/Users/emrekavak/Desktop/c23/images/"
+landmark_path = "/Users/emrekavak/Desktop/celebA-Transformed/"
+img_dir_path = "/Users/emrekavak/Desktop/celebA-Transformed/"
 
 
 class LandmarkDatabaseGenerator():
@@ -27,7 +27,12 @@ class LandmarkDatabaseGenerator():
         for im_p in tqdm(self.imgs):
             src_im = dlib.load_rgb_image(img_dir_path+im_p)
             boxes = self.detector(src_im, 1)
-            box = boxes.pop()
+            box = None
+            for box in boxes:
+                box = boxes.pop()
+                break
+            else:
+                continue
             landmarks = self.predictor(src_im, box)
             landmarks_np = ut.shape_to_np(landmarks)
             landmarks_dict[im_p] = landmarks_np.tolist()

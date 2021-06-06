@@ -16,9 +16,9 @@ from tqdm import tqdm
 # and implement directory creation (right now, certain dirs have to exist
 # before)
 
-landmark_path = "/Users/emrekavak/Desktop/landmarks/landmark_db.txt"
-img_dir_path = "/Users/emrekavak/Desktop/c23/images/"
-data_set_path = "/Users/emrekavak/Desktop/DataSet/"
+landmark_path = "/Users/emrekavak/Desktop/celebA-Transformed/landmark_db.txt"
+img_dir_path = "/Users/emrekavak/Desktop/celebA-Transformed/"
+data_set_path = "/Users/emrekavak/Desktop/DataSet/celebA-Xray/"
 
 
 def random_get_hull(landmark, img1):
@@ -143,10 +143,11 @@ class DataSetGenerator():
         foreground_face = io.imread(self.image_path+foreground_face_path)
         
         # down sample before blending
-        aug_size_y = random.randint(int(im_y*0.4), im_y)
-        aug_size_x = random.randint(int(im_x*0.4), im_x)
-        background_landmark[:, 0] = background_landmark[:, 0] * (aug_size_y/im_y)
-        background_landmark[:, 1] = background_landmark[:, 1] * (aug_size_x/im_x)
+        down_sample_factor = random.uniform(0.4, 1)
+        aug_size_y = int(im_y*down_sample_factor)
+        aug_size_x = int(im_x*down_sample_factor)
+        background_landmark[:, 0] = background_landmark[:, 0] * (aug_size_x/im_x)
+        background_landmark[:, 1] = background_landmark[:, 1] * (aug_size_y/im_y)
         foreground_face = sktransform.resize(foreground_face, (aug_size_y, aug_size_x), preserve_range=True).astype(np.uint8)
         background_face = sktransform.resize(background_face, (aug_size_y, aug_size_x), preserve_range=True).astype(np.uint8)
         
@@ -178,6 +179,8 @@ class DataSetGenerator():
         for img_name in tqdm(self.image_names):
             background_face_path = img_name
             fake = random.randint(0, 1)
+            if self.landmarks_db.get(img_name) == None:
+                continue
             if fake:
                 face_img, mask = self.get_blended_face(background_face_path)
             else:
@@ -189,8 +192,9 @@ class DataSetGenerator():
 
             # randomly downsample after BI pipeline
             if random.randint(0, 1):
-                aug_size_y = random.randint(int(im_y*0.4), im_y)
-                aug_size_x = random.randint(int(im_x*0.4), im_x)
+                down_sample_factor = random.uniform(0.4, 1)
+                aug_size_y = int(im_y*down_sample_factor)
+                aug_size_x = int(im_x*down_sample_factor)
                 face_img = Image.fromarray(face_img)
                 if random.randint(0, 1):
                     face_img = face_img.resize((aug_size_y, aug_size_x), Image.BILINEAR)
