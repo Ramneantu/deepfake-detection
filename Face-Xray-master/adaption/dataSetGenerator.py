@@ -197,10 +197,10 @@ class DataSetGenerator():
                 aug_size_x = int(im_x*down_sample_factor)
                 face_img = Image.fromarray(face_img)
                 if random.randint(0, 1):
-                    face_img = face_img.resize((aug_size_y, aug_size_x), Image.BILINEAR)
+                    face_img = face_img.resize((aug_size_x, aug_size_y), Image.BILINEAR)
                 else:
-                    face_img = face_img.resize((aug_size_y, aug_size_x), Image.NEAREST)
-                face_img = face_img.resize((im_y, im_x), Image.BILINEAR)
+                    face_img = face_img.resize((aug_size_x, aug_size_y), Image.NEAREST)
+                face_img = face_img.resize((im_x, im_y), Image.BILINEAR)
                 face_img = np.array(face_img)
                 
             # random jpeg compression after BI pipeline
