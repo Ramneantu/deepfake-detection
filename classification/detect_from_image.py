@@ -14,6 +14,7 @@ from PIL import Image as pil_image
 from tqdm import tqdm
 import torch.optim as optim
 from torchvision import datasets
+import math
 import numpy as np
 
 from network.models import model_selection
@@ -151,7 +152,7 @@ def initialize_dataloaders(img_path, learning = 'finetuning'):
     image_datasets = {x: datasets.ImageFolder(os.path.join(img_path, x), xception_default_data_transforms[x]) for x in
                       ['train', 'val', 'test']}
     # Create training and validation dataloaders
-    dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, shuffle=True) for x in
+    dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, shuffle=True, num_workers=0) for x in
                         ['train', 'val', 'test']}
     return dataloaders_dict
 
@@ -168,7 +169,7 @@ def setup_training(img_path, model_path, learning, cuda = True):
             params_to_update.append(param)
             print("\t", name)
 
-    optimizer = optim.Adam(params_to_update, lr=0.001, weight_decay=1e-5)
+    optimizer = optim.Adam(params_to_update, lr=0.0002, weight_decay=1e-5)
     criterion = nn.CrossEntropyLoss()
 
     return model, dataloaders_dict, criterion, optimizer, device
@@ -236,6 +237,7 @@ def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25)
             if phase == 'val':
                 val_acc_history.append(epoch_acc)
 
+        torch.save(best_model_wts, f'../data/models/xception_e{epoch + 1}')
         print()
 
     time_elapsed = time.time() - since
@@ -244,7 +246,7 @@ def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25)
 
     # load best model weights
     model.load_state_dict(best_model_wts)
-    torch.save(model.state_dict(), f'../data/models/xception_e{num_epochs}')
+    torch.save(model.state_dict(), f'../data/models/xception_e{num_epochs}_final')
     return model, val_acc_history
 
 if __name__ == '__main__':
