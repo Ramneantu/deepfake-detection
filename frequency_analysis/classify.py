@@ -17,7 +17,7 @@ flags.DEFINE_bool('split_dataset', True, 'Set to true if you do not have a separ
 flags.DEFINE_integer('experiment_num', 1, 'If you run multiple experiments, keep track of experiment number')
 flags.DEFINE_bool('save_dataset', False, 'Set to true if you wish to save the computed frequency averages')
 flags.DEFINE_string('saved_file_name', 'dataset', 'Name for saving the dataset, used if save_dataset is true')
-flags.DEFINE_bool('save_results', True, 'Appends results to results.txt and images in img folder')
+flags.DEFINE_bool('save_results', False, 'Appends results to results.txt and images in img folder')
 
 
 def main(_argv):

@@ -106,8 +106,15 @@ class FrequencySolver:
 
             if crop:
                 h = img.shape[0] // 3
-                w = img.shape[0] // 3
+                w = img.shape[1] // 3
                 img = img[h:-h, w:-w]
+
+            images = [img]
+            no_splits = 2
+            # TODO: schimba parametrii in for loop si in method call
+            for split in range(1, no_splits):
+                blocks = commons.split_image(img, 3 * split)
+                images = images + blocks
 
             psd1D = commons.get_frequencies(img, self.epsilon)
 
@@ -166,7 +173,7 @@ class FrequencySolver:
             svclassifier_r = SVC(C=6.37, kernel='rbf', gamma=0.86)
             svclassifier_r.fit(X_train, y_train)
 
-            svclassifier_p = SVC(kernel='poly')
+            svclassifier_p = SVC(kernel='poly', verbose=1)
             svclassifier_p.fit(X_train, y_train)
 
             logreg = LogisticRegression(solver='liblinear', max_iter=1000)
@@ -241,8 +248,6 @@ class FrequencySolver:
             plt.savefig(save_path)
 
         plt.show()
-
-
 
     def save_dataset(self, file_name: str = 'dataset'):
         if file_name == 'dataset':
