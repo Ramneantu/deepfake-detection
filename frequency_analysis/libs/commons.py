@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def get_frequencies(img: np.ndarray, epsilon: float):
@@ -16,6 +17,7 @@ def get_frequencies(img: np.ndarray, epsilon: float):
     # magnitude_spectrum = np.abs(fshift)
     magnitude_spectrum = 20 * np.log(np.abs(fshift))
     psd1D = azimuthal_average(magnitude_spectrum)
+    # psd1D = azimuthal_average_v2(magnitude_spectrum)
 
     return psd1D
 
@@ -67,3 +69,44 @@ def azimuthal_average(image, center=None):
 
     return radial_prof
 
+
+def azimuthal_average_v2(image):
+    # create array of radii
+    x, y = np.meshgrid(np.arange(image.shape[1]), np.arange(image.shape[0]))
+    y_center = image.shape[0] // 2
+    x_center = image.shape[1] // 2
+    x = x - x_center
+    y = y - y_center
+
+    R = np.sqrt(x ** 2 + y ** 2)
+
+    # calculate the mean
+    f = lambda r: image[(R >= r - 0.5) & (R < r + 0.5)].mean()
+    max_val = min(image.shape[0] // 2, image.shape[1] // 2)
+    r = np.linspace(1, max_val, num=max_val)
+    mean = np.vectorize(f)(r)
+
+    return mean
+
+
+def split_image(img, fraction: int = 1):
+    """
+    Divides image in fraction x fraction equally-sized blocks
+    :param img: Image to be divided
+    :param fraction: Each block will have size ((img_width)/fraction, (img_height)/fraction) => there will be fraction x fraction
+    blocks in total
+    :return: ndarray with the stacked images
+    """
+    # pieces = np.power(fraction, 2)
+
+    new_height = img.shape[0] // fraction
+    new_width = img.shape[1] // fraction
+
+    img_resized = img[:fraction * new_height, :fraction * new_width]
+    shape_h = img_resized.shape[0] - new_height
+    shape_w = img_resized.shape[1] - new_width
+
+    blocks = [img[h:h + new_height, w:w + new_width] for h in range(0, shape_h + 1, new_height)
+              for w in range(0, shape_w + 1, new_width)]
+    # import matplotlib.pyplot as plt; plt.imshow(blocks[0]); plt.show()
+    return blocks
