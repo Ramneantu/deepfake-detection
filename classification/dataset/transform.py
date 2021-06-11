@@ -21,3 +21,22 @@ xception_default_data_transforms = {
         transforms.Normalize([0.5] * 3, [0.5] * 3)
     ]),
 }
+
+
+def get_pil_transform():
+    transf = transforms.Compose([
+        transforms.Resize(299),
+        transforms.CenterCrop(299)
+    ])
+
+    return transf
+
+
+def get_preprocess_transform():
+    normalize = transforms.Normalize([0.5]*3, [0.5]*3)
+    transf = transforms.Compose([
+        transforms.ToTensor(),
+        normalize
+    ])
+
+    return transf

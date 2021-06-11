@@ -155,6 +155,8 @@ class Xception(nn.Module):
 
         self.fc = nn.Linear(2048, num_classes)
 
+        # self.soft = nn.Softmax(dim=1)
+
         # #------- init weights --------
         # for m in self.modules():
         #     if isinstance(m, nn.Conv2d):
@@ -206,6 +208,7 @@ class Xception(nn.Module):
     def forward(self, input):
         x = self.features(input)
         x = self.logits(x)
+        # x = self.soft(x)
         return x
 
 
