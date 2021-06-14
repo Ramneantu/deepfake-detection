@@ -1,7 +1,19 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import griddata
+from .FreqDataset import FreqDataset
+from torch.utils.data import random_split
 
+
+def dataset_split(data: np.ndarray, label: np.ndarray, train_p):
+    """
+    Create training and validation datasets
+    """
+    if train_p < 0 or train_p > 1:
+        raise ValueError("train_p should be between 0 and 1")
+    dataset = FreqDataset(data, label)
+    total_size = dataset.__len__()
+    return random_split(dataset, [total_size * train_p, total_size * (1 - train_p)])
 
 
 def get_frequencies(img: np.ndarray, epsilon: float):

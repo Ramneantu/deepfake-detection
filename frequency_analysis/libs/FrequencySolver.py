@@ -241,8 +241,9 @@ class FrequencySolver:
 
         # TODO: Implement Dataset
         # Define training, validation (and test) datasets
-        # train_dataset = FreqDataset(...)
-        # val_dataset = FreqDataset(...)
+        phases = ['train', 'val']
+        train_dataset, val_dataset = commons.dataset_split(X, y, 0.8)
+        dataset_dict = {'train': train_dataset, 'val': val_dataset}
 
         # TODO: Define hparameters
         # Define some hyperparameters
@@ -254,6 +255,9 @@ class FrequencySolver:
         # TODO: Define Dataloader here / in DeepFreq
         # e.g. :  train_set = DataLoader(train_dataset, batch_size=hparams["batch_size"], shuffle=True)
         # where train_dataset defined above
+        dataloader_dict = {x: torch.utils.data.DataLoader(dataset_dict[x], batch_size=8, shuffle=True) for x
+                            in
+                            phases}
 
         # TODO: Define trainer + don't forget to initialize weights
         # trainer = pl.Trainer(
