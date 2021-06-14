@@ -235,7 +235,7 @@ class FrequencySolver:
 
     def train_NN(self):
         # Precomputed data is saved in self.data
-        X = self.data["data"]
+        X = self.data["data"].astype(np.float32)
         y = self.data["label"]
 
         # Set working device
@@ -272,7 +272,8 @@ class FrequencySolver:
 
         # TODO: Define trainer + don't forget to initialize weights
         trainer = pl.Trainer(
-               max_epochs=20
+                gpus=1,
+                max_epochs=20
                   )
         # + check some other pl.Trainer arguments/parameters
         trainer.fit(model, dataloader_dict['train'], dataloader_dict['val'])
