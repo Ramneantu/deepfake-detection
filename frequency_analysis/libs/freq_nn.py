@@ -29,7 +29,7 @@ class DeepFreq(pl.LightningModule):
         return predictions
 
     def general_step(self, batch, batch_idx, mode):
-        signals, labels = batch["data"], batch["labels"]
+        signals, labels = batch
         prediction = self.forward(signals)
 
         entropy_loss = nn.CrossEntropyLoss()

@@ -19,6 +19,7 @@ import torch
 from torch.nn import functional as F
 from torch import nn
 from pytorch_lightning.core.lightning import LightningModule
+import pytorch_lightning as pl
 
 
 class FrequencySolver:
@@ -242,9 +243,13 @@ class FrequencySolver:
 
         # TODO: Implement Dataset
         # Define training, validation (and test) datasets
-        phases = ['train', 'val']
-        train_dataset, val_dataset = commons.dataset_split(X, y, 0.8)
-        dataset_dict = {'train': train_dataset, 'val': val_dataset}
+        phases = ['train', 'val', 'test']
+        train_dataset, val_dataset, test_dataset = commons.dataset_split(X, y, 0.8)
+        dataset_dict = {
+            'train': train_dataset,
+            'val': val_dataset,
+            'test': test_dataset
+        }
 
         # TODO: Define hparameters
         # Define some hyperparameters
@@ -261,20 +266,19 @@ class FrequencySolver:
         # TODO: Define Dataloader here / in DeepFreq
         # e.g. :  train_set = DataLoader(train_dataset, batch_size=hparams["batch_size"], shuffle=True)
         # where train_dataset defined above
-        dataloader_dict = {x: torch.utils.data.DataLoader(dataset_dict[x], batch_size=8, shuffle=True) for x
+        dataloader_dict = {x: torch.utils.data.DataLoader(dataset_dict[x], batch_size=h_params['batch_size'], shuffle=True) for x
                             in
                             phases}
 
         # TODO: Define trainer + don't forget to initialize weights
-        # trainer = pl.Trainer(
-        #        max_epochs=20,
-        #        gpus=1 if torch.....
-        #           )
+        trainer = pl.Trainer(
+               max_epochs=20
+                  )
         # + check some other pl.Trainer arguments/parameters
-        # trainer.fit()
+        trainer.fit(model, dataloader_dict['train'], dataloader_dict['val'])
 
         # TODO: Test/evaluate the model
-
+        trainer.test(test_dataloaders=dataloader_dict['test'])
 
 
 
