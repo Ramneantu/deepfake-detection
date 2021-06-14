@@ -32,7 +32,7 @@ def main(_argv):
     solver_object.train(test_file=FLAGS.test_file, split_dataset=FLAGS.split_dataset)
     logging.info("Training finished")
 
-    solver_object.visualize()
+    # solver_object.visualize()
 
     if FLAGS.save_dataset:
         solver_object.save_dataset(file_name=FLAGS.saved_file_name)

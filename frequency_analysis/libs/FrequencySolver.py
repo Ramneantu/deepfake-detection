@@ -1,15 +1,23 @@
 import cv2
 import numpy as np
+
 from . import commons
+
 import glob
 from matplotlib import pyplot as plt
 import pickle
-from scipy.interpolate import griddata
+
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
+
 from absl import app, flags, logging
 from absl.flags import FLAGS
+
+import torch
+from torch.nn import functional as F
+from torch import nn
+from pytorch_lightning.core.lightning import LightningModule
 
 
 class FrequencySolver:
@@ -98,7 +106,8 @@ class FrequencySolver:
         else:
             label = np.zeros([self.num_iter])
 
-        data = np.zeros([self.num_iter, self.features])
+        # data = np.zeros([self.num_iter, self.features])
+        data = np.zeros(([self.num_iter, 1400]))
         file_num = 0
 
         for filename in glob.glob(path + "/*"):
@@ -116,13 +125,10 @@ class FrequencySolver:
                 blocks = commons.split_image(img, 3 * split)
                 images = images + blocks
 
-            psd1D = commons.get_frequencies(img, self.epsilon)
-
-            points = np.linspace(0, self.features, num=psd1D.size)
-            xi = np.linspace(0, self.features, num=self.features)
-
-            interpolated = griddata(points, psd1D, xi, method='cubic')
-            interpolated /= interpolated[0]
+            frequencies = [commons.get_frequencies(img, self.epsilon) for img in images]
+            # psd1D = commons.get_frequencies(img, self.epsilon)
+            interpolated_array = [commons.interpolate_features(psd1D, self.features, cnt) for (psd1D, cnt) in zip(frequencies, range(10))]
+            interpolated = np.hstack(interpolated_array)
 
             data[file_num, :] = interpolated
             file_num += 1
@@ -223,6 +229,44 @@ class FrequencySolver:
                     "(Average) SVM_r: " + str(SVM_r / iterations) + '\n' +
                     "(Average) SVM_p: " + str(SVM_p / iterations) + '\n' +
                     "(Average) LR: " + str(LR / iterations) + '\n\n')
+
+
+    def train_NN(self):
+        # Precomputed data is saved in self.data
+        X = self.data["data"]
+        y = self.data["label"]
+
+        # Set working device
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        # TODO: Implement Dataset
+        # Define training, validation (and test) datasets
+        # train_dataset = FreqDataset(...)
+        # val_dataset = FreqDataset(...)
+
+        # TODO: Define hparameters
+        # Define some hyperparameters
+        # hparams = {...} <- check pl parameters
+
+        # TODO: Define model
+        # model = DeepFreq(hparams)
+
+        # TODO: Define Dataloader here / in DeepFreq
+        # e.g. :  train_set = DataLoader(train_dataset, batch_size=hparams["batch_size"], shuffle=True)
+        # where train_dataset defined above
+
+        # TODO: Define trainer + don't forget to initialize weights
+        # trainer = pl.Trainer(
+        #        max_epochs=20,
+        #        gpus=1 if torch.....
+        #           )
+        # + check some other pl.Trainer arguments/parameters
+        # trainer.fit()
+
+        # TODO: Test/evaluate the model
+
+
+
 
     def visualize(self):
         """

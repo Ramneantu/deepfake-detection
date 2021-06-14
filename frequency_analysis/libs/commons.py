@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.interpolate import griddata
+
 
 
 def get_frequencies(img: np.ndarray, epsilon: float):
@@ -110,3 +112,25 @@ def split_image(img, fraction: int = 1):
               for w in range(0, shape_w + 1, new_width)]
     # import matplotlib.pyplot as plt; plt.imshow(blocks[0]); plt.show()
     return blocks
+
+
+def interpolate_features(psd1D: np.ndarray = None, no_features: int = 300, contor = 1):
+    """
+    Give psd1D signal with n features.
+    Using interpolation a psd1D signal with no_features features is returned
+    :param psd1D: The 1D signal
+    :param no_features: Number of features that needs to be returned
+    :return: Interpolated signal
+    """
+
+    if contor > 1:
+        no_features = no_features // 3
+
+    points = np.linspace(0, no_features, num=psd1D.size)
+    xi = np.linspace(0, no_features, no_features)
+
+    interpolated = griddata(points, psd1D, xi, method='cubic')
+    interpolated /= interpolated[0]
+
+    return interpolated
+
