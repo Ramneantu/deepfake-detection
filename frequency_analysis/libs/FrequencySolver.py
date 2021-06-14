@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 
 from . import commons
+from .freq_nn import DeepFreq
 
 import glob
 from matplotlib import pyplot as plt
@@ -247,10 +248,15 @@ class FrequencySolver:
 
         # TODO: Define hparameters
         # Define some hyperparameters
-        # hparams = {...} <- check pl parameters
+        h_params = {
+            "lr": 0.001,
+            "weight_decay": 0.000001,
+            "batch_size": 128
+            # early_stopping = True
+        }
 
         # TODO: Define model
-        # model = DeepFreq(hparams)
+        model = DeepFreq(h_params)
 
         # TODO: Define Dataloader here / in DeepFreq
         # e.g. :  train_set = DataLoader(train_dataset, batch_size=hparams["batch_size"], shuffle=True)
