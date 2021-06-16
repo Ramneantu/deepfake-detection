@@ -18,8 +18,9 @@ from absl.flags import FLAGS
 import torch
 from torch.nn import functional as F
 from torch import nn
-from pytorch_lightning.core.lightning import LightningModule
 import pytorch_lightning as pl
+from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 
 class FrequencySolver:
@@ -129,7 +130,8 @@ class FrequencySolver:
 
             frequencies = [commons.get_frequencies(img, self.epsilon) for img in images]
             # psd1D = commons.get_frequencies(img, self.epsilon)
-            interpolated_array = [commons.interpolate_features(psd1D, self.features, cnt) for (psd1D, cnt) in zip(frequencies, range(10))]
+            interpolated_array = [commons.interpolate_features(psd1D, self.features, cnt) for (psd1D, cnt) in
+                                  zip(frequencies, range(10))]
             interpolated = np.hstack(interpolated_array)
 
             data[file_num, :] = interpolated
@@ -232,7 +234,6 @@ class FrequencySolver:
                     "(Average) SVM_p: " + str(SVM_p / iterations) + '\n' +
                     "(Average) LR: " + str(LR / iterations) + '\n\n')
 
-
     def train_NN(self):
         # Precomputed data is saved in self.data
         X = self.data["data"].astype(np.float32)
@@ -240,6 +241,7 @@ class FrequencySolver:
 
         # Set working device
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # print("Device used: {}".format(device))
 
         # TODO: Implement Dataset
         # Define training, validation (and test) datasets
@@ -257,31 +259,38 @@ class FrequencySolver:
             "lr": 0.001,
             "weight_decay": 0.000001,
             "batch_size": 128
-            # early_stopping = True
         }
 
+        # TODO: Define logger to use early stopping
+        freq_logger = TensorBoardLogger(save_dir="lightning_logs")
+
+        early_stop_callback = EarlyStopping(
+            monitor='val_loss'
+        )
+
         # TODO: Define model
-        model = DeepFreq(h_params)
+        model = DeepFreq(h_params=h_params)
 
         # TODO: Define Dataloader here / in DeepFreq
         # e.g. :  train_set = DataLoader(train_dataset, batch_size=hparams["batch_size"], shuffle=True)
         # where train_dataset defined above
-        dataloader_dict = {x: torch.utils.data.DataLoader(dataset_dict[x], batch_size=h_params['batch_size'], shuffle=True) for x
-                            in
-                            phases}
+        dataloader_dict = {
+            x: torch.utils.data.DataLoader(dataset_dict[x], batch_size=h_params['batch_size'], shuffle=True) for x
+            in phases}
 
+        # trainer has a flag auto_lr_find=True
         # TODO: Define trainer + don't forget to initialize weights
         trainer = pl.Trainer(
-                gpus=1,
-                max_epochs=20
-                  )
-        # + check some other pl.Trainer arguments/parameters
+            max_epochs=20,
+            gpus=1 if device is 'cuda' else None,
+            callbacks=[early_stop_callback],
+            logger=freq_logger
+        )
+
         trainer.fit(model, dataloader_dict['train'], dataloader_dict['val'])
 
         # TODO: Test/evaluate the model
         trainer.test(test_dataloaders=dataloader_dict['test'])
-
-
 
     def visualize(self):
         """

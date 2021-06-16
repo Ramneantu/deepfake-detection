@@ -44,8 +44,9 @@ class DeepFreq(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx, ):
         loss = self.general_step(batch, batch_idx, "val")
+        self.log('val_loss', loss)
+        return {'val_loss': loss}
 
-    # @static?
     def general_end(self, outputs, mode):
         avg_loss = torch.stack([x[mode + 'loss'] for x in outputs]).mean
 
@@ -59,6 +60,11 @@ class DeepFreq(pl.LightningModule):
         optimization_method = torch.optim.Adam(parameters, lr=self.hparams['lr'],
                                                weight_decay=self.hparams['weight_decay'])
         return optimization_method
+
+    def test_step(self, batch, batch_idx):
+        loss = self.general_step(batch, batch_idx, mode='test')
+
+        return {'test_loss': loss}
 
 
 
