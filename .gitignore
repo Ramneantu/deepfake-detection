@@ -1,5 +1,6 @@
 .idea
 /frequency_analysis/data*
 /frequency_analysis/img*
-.pyc
+frequency_analysis/lightning_logs
+*.pyc
 /data
