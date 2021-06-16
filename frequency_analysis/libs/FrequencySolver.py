@@ -237,7 +237,7 @@ class FrequencySolver:
     def train_NN(self):
         # Precomputed data is saved in self.data
         X = self.data["data"].astype(np.float32)
-        y = self.data["label"]
+        y = self.data["label"].astype(np.longlong)
 
         # Set working device
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
