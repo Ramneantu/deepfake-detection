@@ -1,0 +1,6 @@
+.idea
+/frequency_analysis/data*
+/frequency_analysis/img*
+.pyc
+/data
+**/.DS_Store
