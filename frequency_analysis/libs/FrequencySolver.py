@@ -18,6 +18,7 @@ from absl.flags import FLAGS
 import torch
 from torch.nn import functional as F
 from torch import nn
+from torchsummary import summary
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
@@ -243,7 +244,6 @@ class FrequencySolver:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         # print("Device used: {}".format(device))
 
-        # TODO: Implement Dataset
         # Define training, validation (and test) datasets
         phases = ['train', 'val', 'test']
         train_dataset, val_dataset, test_dataset = commons.dataset_split(X, y, 0.8)
@@ -253,7 +253,6 @@ class FrequencySolver:
             'test': test_dataset
         }
 
-        # TODO: Define hparameters
         # Define some hyperparameters
         h_params = {
             "lr": 0.001,
@@ -261,35 +260,40 @@ class FrequencySolver:
             "batch_size": 128
         }
 
-        # TODO: Define logger to use early stopping
         freq_logger = TensorBoardLogger(save_dir="lightning_logs")
 
         early_stop_callback = EarlyStopping(
-            monitor='val_loss'
+            monitor='val_loss',
+            patience=5
         )
 
-        # TODO: Define model
+        # Define model
         model = DeepFreq(h_params=h_params)
-
-        # TODO: Define Dataloader here / in DeepFreq
-        # e.g. :  train_set = DataLoader(train_dataset, batch_size=hparams["batch_size"], shuffle=True)
-        # where train_dataset defined above
+        # from torch.utils.tensorboard import SummaryWriter
+        # writer = SummaryWriter('runs/freq_net')
+        # writer.add_graph(model, torch.Tensor(X[0]))
+        # writer.close()
+        summary(model.cuda(), (1,1400))
+        # Dataloader
         dataloader_dict = {
-            x: torch.utils.data.DataLoader(dataset_dict[x], batch_size=h_params['batch_size'], shuffle=True) for x
-            in phases}
+            x: torch.utils.data.DataLoader(dataset_dict[x], batch_size=h_params['batch_size'], shuffle=True) if x ==
+            'train' else
+            torch.utils.data.DataLoader(dataset_dict[x], batch_size=h_params['batch_size'], shuffle=False)
+            for x in phases}
 
-        # trainer has a flag auto_lr_find=True
-        # TODO: Define trainer + don't forget to initialize weights
+        # TODO: trainer has a flag auto_lr_find=True
+        # Trainer
         trainer = pl.Trainer(
             max_epochs=20,
-            gpus=1 if device is 'cuda' else None,
+            gpus=1 if str(device) == 'cuda' else None,
             callbacks=[early_stop_callback],
-            logger=freq_logger
+            logger=freq_logger,
         )
 
+        # Train
         trainer.fit(model, dataloader_dict['train'], dataloader_dict['val'])
 
-        # TODO: Test/evaluate the model
+        # Test
         trainer.test(test_dataloaders=dataloader_dict['test'])
 
     def visualize(self):
