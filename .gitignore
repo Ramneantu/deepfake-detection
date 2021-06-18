@@ -4,5 +4,5 @@ frequency_analysis/img*
 frequency_analysis/lightning_logs
 *.pyc
 /data
-
+.vscode
 frequency_analysis/runs/*
