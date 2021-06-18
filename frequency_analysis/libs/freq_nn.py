@@ -100,7 +100,7 @@ class ScalingLayer(nn.Module):
         """
         super(ScalingLayer, self).__init__()
         self.size = size
-        self.weights = nn.Parameter(torch.Tensor(1, size), requires_grad=True)
+        self.weights = nn.Parameter(torch.Tensor(1, size))
 
         nn.init.xavier_normal_(self.weights)
 
