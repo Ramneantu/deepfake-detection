@@ -3,7 +3,6 @@ from torch.nn import functional as F
 from torch import nn
 import pytorch_lightning as pl
 
-# New idea for custom layer: inherit from nn.Module in a new class and then add it to the DeepFreq
 
 class DeepFreq(pl.LightningModule):
     def __init__(self, h_params, parameters_in: int = 1400, parameters_out: int = 2, n_hidden: int = 2):
@@ -12,26 +11,27 @@ class DeepFreq(pl.LightningModule):
         self.parameters_in = parameters_in
         self.parameters_out = parameters_out
         self.n_hidden = n_hidden
-        # Layer of model
-        # self.scaling_layer = nn.Parameter(torch.randn(parameters_in), requires_grad=True)
+
+        # Layers of model
         self.scaling_layer = ScalingLayer(parameters_in)
         self.scaling_layer.cuda()
         self.FC = nn.Sequential(
             nn.Linear(in_features=parameters_in, out_features=700),
-            nn.ReLU(),
+            nn.PReLU(),
             nn.Linear(in_features=700, out_features=350),
-            nn.ReLU(),
-            nn.Linear(in_features=350, out_features=150),
-            nn.ReLU(),
-            nn.Linear(in_features=150, out_features=70),
-            nn.ReLU(),
-            nn.Linear(in_features=70, out_features=40),
-            nn.ReLU(),
+            nn.PReLU(),
+            nn.Linear(in_features=350, out_features=175),
+            nn.PReLU(),
+            nn.Linear(in_features=175, out_features=85),
+            nn.PReLU(),
+            nn.Linear(in_features=85, out_features=40),
+            nn.PReLU(),
             nn.Linear(in_features=40, out_features=20),
-            nn.ReLU(),
+            nn.PReLU(),
             nn.Linear(in_features=20, out_features=10),
-            nn.ReLU(),
+            nn.PReLU(),
             nn.Linear(in_features=10, out_features=2),
+            nn.ReLU(),
             nn.Softmax(dim=1)
         )
 
@@ -67,7 +67,7 @@ class DeepFreq(pl.LightningModule):
         return avg_loss
 
     def validation_epoch_end(self, outputs):
-        avg_loss = torch.stack([x['loss'] for x in outputs]).mean
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         tens = torch.cat([x['correct'] for x in outputs], dim=0).double()
         acc = tens.mean()
         self.log('val_loss', avg_loss)
@@ -84,7 +84,7 @@ class DeepFreq(pl.LightningModule):
         return {'loss': loss, 'correct': correct}
 
     def test_epoch_end(self, outputs):
-        avg_loss = torch.stack([x['loss'] for x in outputs]).mean
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         tens = torch.cat([x['correct'] for x in outputs], dim=0).double()
         acc = tens.mean()
         self.log('test_loss', avg_loss)
@@ -99,13 +99,11 @@ class ScalingLayer(nn.Module):
         :param size: Size of input. Output size of layer remains the same
         """
         super(ScalingLayer, self).__init__()
-        self.size = size
-        self.weights = nn.Parameter(torch.Tensor(1, size))
-
-        nn.init.xavier_normal_(self.weights)
+        self.weight = nn.Parameter(torch.Tensor(1, size))
+        nn.init.kaiming_normal_(self.weight)
 
     def forward(self, x):
-        return x * self.weights
+        return nn.ReLU()(x * self.weight)
 
 
 
