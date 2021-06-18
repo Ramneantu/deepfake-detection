@@ -43,29 +43,35 @@ class DeepFreq(pl.LightningModule):
 
     def general_step(self, batch, batch_idx, mode):
         signals, labels = batch
-        prediction = self.forward(signals)
+        probabilities = self.forward(signals)
 
         entropy_loss = nn.CrossEntropyLoss()
-        loss = entropy_loss(prediction, labels)
+        loss = entropy_loss(probabilities, labels)
 
-        return loss
+        _, pred = torch.max(probabilities, 1)
+        correct = torch.eq(pred, labels)
+
+        return loss, correct
 
     def training_step(self, batch, batch_idx):
-        loss = self.general_step(batch, batch_idx, "train")
+        loss, _ = self.general_step(batch, batch_idx, "train")
         return {'loss': loss}
 
-    def validation_step(self, batch, batch_idx, ):
-        loss = self.general_step(batch, batch_idx, "val")
-        self.log('val_loss', loss)
-        return {'val_loss': loss}
+    def validation_step(self, batch, batch_idx):
+        loss, correct = self.general_step(batch, batch_idx, "val")
+        return {'loss': loss, 'correct': correct}
 
     def general_end(self, outputs, mode):
         avg_loss = torch.stack([x[mode + 'loss'] for x in outputs]).mean
 
         return avg_loss
 
-    def validation_end(self, outputs):
-        avg_loss = self.general_end(outputs, "val")
+    def validation_epoch_end(self, outputs):
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean
+        tens = torch.cat([x['correct'] for x in outputs], dim=0).double()
+        acc = tens.mean()
+        self.log('val_loss', avg_loss)
+        self.log('val_acc', acc)
 
     def configure_optimizers(self):
         parameters = self.parameters()
@@ -74,9 +80,15 @@ class DeepFreq(pl.LightningModule):
         return optimization_method
 
     def test_step(self, batch, batch_idx):
-        loss = self.general_step(batch, batch_idx, mode='test')
+        loss, correct = self.general_step(batch, batch_idx, "val")
+        return {'loss': loss, 'correct': correct}
 
-        return {'test_loss': loss}
+    def test_epoch_end(self, outputs):
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean
+        tens = torch.cat([x['correct'] for x in outputs], dim=0).double()
+        acc = tens.mean()
+        self.log('test_loss', avg_loss)
+        self.log('test_acc', acc)
 
 
 class ScalingLayer(nn.Module):
