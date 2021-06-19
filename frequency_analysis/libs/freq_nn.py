@@ -16,22 +16,12 @@ class DeepFreq(pl.LightningModule):
         self.scaling_layer = ScalingLayer(parameters_in)
         self.scaling_layer.cuda()
         self.FC = nn.Sequential(
-            nn.Linear(in_features=parameters_in, out_features=700),
+            nn.Linear(in_features=parameters_in, out_features=500),
             nn.PReLU(),
-            nn.Linear(in_features=700, out_features=350),
+            nn.Linear(in_features=500, out_features=80),
             nn.PReLU(),
-            nn.Linear(in_features=350, out_features=175),
+            nn.Linear(in_features=80, out_features=2),
             nn.PReLU(),
-            nn.Linear(in_features=175, out_features=85),
-            nn.PReLU(),
-            nn.Linear(in_features=85, out_features=40),
-            nn.PReLU(),
-            nn.Linear(in_features=40, out_features=20),
-            nn.PReLU(),
-            nn.Linear(in_features=20, out_features=10),
-            nn.PReLU(),
-            nn.Linear(in_features=10, out_features=2),
-            nn.ReLU(),
             nn.Softmax(dim=1)
         )
 
@@ -100,7 +90,7 @@ class ScalingLayer(nn.Module):
         """
         super(ScalingLayer, self).__init__()
         self.weight = nn.Parameter(torch.Tensor(1, size))
-        nn.init.kaiming_normal_(self.weight)
+        nn.init.uniform_(self.weight)
 
     def forward(self, x):
         return nn.ReLU()(x * self.weight)
