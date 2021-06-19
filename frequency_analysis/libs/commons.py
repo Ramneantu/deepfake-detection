@@ -13,9 +13,9 @@ def dataset_split(data: np.ndarray, label: np.ndarray, train_p):
         raise ValueError("train_p should be between 0 and 1")
     dataset = FreqDataset(data, label)
     total_size = len(dataset)
-    return random_split(dataset, [int(total_size * train_p),
-                                  int(total_size * (1 - train_p)/2),
-                                  total_size - int(total_size * train_p) - int(total_size * (1 - train_p)/2)])
+    return random_split(dataset, [round(total_size * train_p),
+                                  round(total_size * (1 - train_p)/2),
+                                  total_size - round(total_size * train_p) - round(total_size * (1 - train_p)/2)])
 
 
 def get_frequencies(img: np.ndarray, epsilon: float):

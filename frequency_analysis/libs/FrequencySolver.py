@@ -246,7 +246,10 @@ class FrequencySolver:
 
         # Define training, validation (and test) datasets
         phases = ['train', 'val', 'test']
-        train_dataset, val_dataset, test_dataset = commons.dataset_split(X, y, 0.8)
+        train_dataset, val_dataset, test_dataset = commons.dataset_split(X, y, 0.1)
+        val_dataset = train_dataset
+        test_dataset = train_dataset
+
         dataset_dict = {
             'train': train_dataset,
             'val': val_dataset,
@@ -255,9 +258,9 @@ class FrequencySolver:
 
         # Define some hyperparameters
         h_params = {
-            "lr": 0.001,
-            "weight_decay": 0.000001,
-            "batch_size": 128
+            "lr": 0.0001,
+            "weight_decay": 1,
+            "batch_size": 1
         }
 
         freq_logger = TensorBoardLogger(save_dir="lightning_logs")
@@ -269,10 +272,12 @@ class FrequencySolver:
 
         # Define model
         model = DeepFreq(h_params=h_params)
-        # from torch.utils.tensorboard import SummaryWriter
-        # writer = SummaryWriter('runs/freq_net')
-        # writer.add_graph(model, torch.Tensor(X[0]))
-        # writer.close()
+
+        from torch.utils.tensorboard import SummaryWriter
+        writer = SummaryWriter('runs/freq_net')
+        writer.add_graph(model.to(device="cuda"), torch.Tensor(X[0]).cuda())
+        writer.close()
+
         summary(model.cuda(), (1,1400))
         # Dataloader
         dataloader_dict = {
@@ -284,9 +289,9 @@ class FrequencySolver:
         # TODO: trainer has a flag auto_lr_find=True
         # Trainer
         trainer = pl.Trainer(
-            max_epochs=20,
+            max_epochs=30,
             gpus=1 if str(device) == 'cuda' else None,
-            callbacks=[early_stop_callback],
+            # callbacks=[early_stop_callback],
             logger=freq_logger,
         )
 
