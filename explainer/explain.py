@@ -84,24 +84,30 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake=True):
     for kind in rf:
         kind_val = oneFake(kind) if oneIsFake else not(oneFake(kind))
         c = 0
-        im_dir = os.path.join(datasetName, modelNameSpecs, kind)
+        im_dir = os.path.join(datasetName, kind)
         im_names = list(filter(isImage, os.listdir(im_dir)))
         for filename in im_names:
-            im = get_image(filename)
-            print(c + " of " + len(im_names))
+            im = get_image(os.path.join(im_dir, filename))
+            print(str(c) + " of " + str(len(im_names)))
             explanation = explainer.explain_instance(np.array(im),
                                                         batch_predict,
                                                         top_labels=2,
                                                         hide_color=0,
                                                         num_samples=1000,
-                                                        batch_size=64)
+                                                        batch_size=32)
             temp, mask = explanation.get_image_and_mask(0, positive_only=False, num_features=10,
                                                         hide_rest=False)
             img_boundary = mark_boundaries(temp / 255.0, mask)
             explainedClass = explanation.top_labels[0]
 
-            classifiedAs = str(kind_val == explainedClass) + kind
-            plt.imsave(os.path.join(datasetName, modelNameSpecs, classifiedAs, filename), img_boundary)
+            classifiedAs = ""
+
+            if kind_val == explainedClass:
+                classifiedAs = str(kind_val == explainedClass) + kind.capitalize()
+            else:
+                classifiedAs = str(kind_val == explainedClass) + ("Real" if kind == "fake" else "Fake")
+
+plt.imsave(os.path.join(datasetName, modelNameSpecs, classifiedAs, filename), img_boundary)
 
 
 def explainExistingModels(load_model, model_batch_predict):
@@ -123,7 +129,7 @@ def explainExistingModels(load_model, model_batch_predict):
         print("Please specify the dataset to be explained or select -ead (explain all existing datasets")
         return
 
-    if args.explain_all:
+    if args.explain_all_data:
         # explain all in EXPLAIN_DATA_PATH
         None
     
