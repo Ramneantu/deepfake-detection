@@ -1,3 +1,7 @@
+import sys
+
+sys.path.append(".")
+
 import os
 import argparse
 import explainer.explainer as exp
