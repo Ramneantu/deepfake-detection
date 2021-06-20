@@ -4,7 +4,7 @@ sys.path.append(".")
 
 import os
 import argparse
-import explainer.explainer as exp
+import explainer.explain as exp
 import torch
 
 import torch.nn as nn
