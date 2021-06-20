@@ -40,10 +40,10 @@ from PIL import Image as pil_image
 from skimage.segmentation import mark_boundaries
 import matplotlib.pyplot as plt
 
-IMGFILES = [".png", ".jpg", ".jpeg"]
+IMGFILES = (".png", ".jpg", ".jpeg")
 
 def isImage(fileName):
-    return fileName.lower().endswith(*IMGFILES)
+    return fileName.lower().endswith(IMGFILES)
 
 def get_image(path):
     with open(os.path.abspath(path), 'rb') as f:
