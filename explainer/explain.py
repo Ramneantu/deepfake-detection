@@ -107,7 +107,7 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake=True):
             else:
                 classifiedAs = str(kind_val == explainedClass) + ("Real" if kind == "fake" else "Fake")
 
-plt.imsave(os.path.join(datasetName, modelNameSpecs, classifiedAs, filename), img_boundary)
+    plt.imsave(os.path.join(datasetName, modelNameSpecs, classifiedAs, filename), img_boundary)
 
 
 def explainExistingModels(load_model, model_batch_predict):
