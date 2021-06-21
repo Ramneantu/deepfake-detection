@@ -94,7 +94,7 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake=True):
                                                         top_labels=2,
                                                         hide_color=0,
                                                         num_samples=1500,
-                                                        batch_size=16)
+                                                        batch_size=32)
             temp, mask = explanation.get_image_and_mask(0, positive_only=False, num_features=10,
                                                         hide_rest=False)
             img_boundary = mark_boundaries(temp / 255.0, mask)

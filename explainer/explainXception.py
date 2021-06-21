@@ -34,7 +34,7 @@ def load_model(model_path):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if model_path is not None:
         state_dict = torch.load(
-            model_path, map_location=device)
+            model_path, map_location='cpu')
         model.load_state_dict(state_dict)
         for i, param in model.named_parameters():
             param.requires_grad = False
