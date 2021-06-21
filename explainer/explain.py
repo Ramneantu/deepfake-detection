@@ -82,7 +82,7 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake=True):
     rf = ['real', 'fake']
     oneFake = lambda x: 1 if x=="fake" else 0
     for kind in rf:
-        kind_val = oneFake(kind) if oneIsFake else not(oneFake(kind))
+        kind_val = oneFake(kind) if oneIsFake else 1-oneFake(kind)
         c = 0
         im_dir = os.path.join(datasetName, kind)
         im_names = list(filter(isImage, os.listdir(im_dir)))
