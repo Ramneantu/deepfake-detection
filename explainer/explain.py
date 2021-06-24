@@ -82,14 +82,16 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake=True):
     rf = ['real', 'fake']
     oneFake = lambda x: 1 if x=="fake" else 0
     for kind in rf:
+        sm = 0
         print(kind)
         kind_val = oneFake(kind) if oneIsFake else 1-oneFake(kind)
-        c = 0
+        c = 1
         im_dir = os.path.join(datasetName, kind)
         im_names = list(filter(isImage, os.listdir(im_dir)))
         for filename in im_names:
             im = get_image(os.path.join(im_dir, filename))
             print(str(c) + " of " + str(len(im_names)))
+            c += 1
             explanation = explainer.explain_instance(np.array(im),
                                                         batch_predict,
                                                         top_labels=2,
@@ -108,13 +110,10 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake=True):
             else:
                 classifiedAs = str(kind_val == explainedClass) + ("Real" if kind == "fake" else "Fake")
 
+            sm += explainedClass
             
             # plt.imsave(os.path.join(datasetName, modelNameSpecs, classifiedAs, filename), img_boundary)
-            print("--------- "+filename + " ---------")
-            print("pytorch prediction: " + batch_predict([im]))
-            print("Top labels explainer: " + explanation.top_labels)
-            print("explainedClass: " + explainedClass)
-            print(classifiedAs)
+        print("False rate " + "for " + kind + " folder: " + str(sm/len(im_names)))
             
 
 
