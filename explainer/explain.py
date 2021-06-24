@@ -82,6 +82,7 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake=True):
     rf = ['real', 'fake']
     oneFake = lambda x: 1 if x=="fake" else 0
     for kind in rf:
+        print(kind)
         kind_val = oneFake(kind) if oneIsFake else 1-oneFake(kind)
         c = 0
         im_dir = os.path.join(datasetName, kind)
@@ -93,7 +94,7 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake=True):
                                                         batch_predict,
                                                         top_labels=2,
                                                         hide_color=0,
-                                                        num_samples=1500,
+                                                        num_samples=1,
                                                         batch_size=2)
             temp, mask = explanation.get_image_and_mask(0, positive_only=False, num_features=10,
                                                         hide_rest=False)
@@ -107,7 +108,14 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake=True):
             else:
                 classifiedAs = str(kind_val == explainedClass) + ("Real" if kind == "fake" else "Fake")
 
-            plt.imsave(os.path.join(datasetName, modelNameSpecs, classifiedAs, filename), img_boundary)
+            
+            # plt.imsave(os.path.join(datasetName, modelNameSpecs, classifiedAs, filename), img_boundary)
+            print("--------- "+filename + " ---------")
+            print("pytorch prediction: " + batch_predict([im]))
+            print("Top labels explainer: " + explanation.top_labels)
+            print("explainedClass: " + explainedClass)
+            print(classifiedAs)
+            
 
 
 def explainExistingModels(load_model, model_batch_predict):
