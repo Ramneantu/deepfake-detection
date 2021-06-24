@@ -70,7 +70,7 @@ def createDatasetFolder(datasetName, modelNameSpecs):
     os.mkdir(os.path.join(dirName, "TrueReal"))
     os.mkdir(os.path.join(dirName, "FalseReal"))
 
-def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake=True):
+def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake=False):
     """
     batch_predict: needs to handle preprocessing and resizing
 
@@ -82,7 +82,6 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake=True):
     rf = ['real', 'fake']
     oneFake = lambda x: 1 if x=="fake" else 0
     for kind in rf:
-        sm = 0
         print(kind)
         kind_val = oneFake(kind) if oneIsFake else 1-oneFake(kind)
         c = 1
@@ -96,9 +95,9 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake=True):
                                                         batch_predict,
                                                         top_labels=2,
                                                         hide_color=0,
-                                                        num_samples=1,
-                                                        batch_size=2)
-            temp, mask = explanation.get_image_and_mask(0, positive_only=False, num_features=10,
+                                                        num_samples=1500,
+                                                        batch_size=32)
+            temp, mask = explanation.get_image_and_mask(0, positive_only=False, num_features=15,
                                                         hide_rest=False)
             img_boundary = mark_boundaries(temp / 255.0, mask)
             explainedClass = explanation.top_labels[0]
@@ -110,11 +109,7 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake=True):
             else:
                 classifiedAs = str(kind_val == explainedClass) + ("Real" if kind == "fake" else "Fake")
 
-            sm += explainedClass
-            
-            # plt.imsave(os.path.join(datasetName, modelNameSpecs, classifiedAs, filename), img_boundary)
-        print("False rate " + "for " + kind + " folder: " + str(sm/len(im_names)))
-            
+            plt.imsave(os.path.join(datasetName, modelNameSpecs, classifiedAs, filename), img_boundary)            
 
 
 def explainExistingModels(load_model, model_batch_predict):
