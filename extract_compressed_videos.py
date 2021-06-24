@@ -88,7 +88,7 @@ def extract_method_videos(data_path, dataset, compression, first_video, last_vid
     videos_path = join(data_path, DATASET_PATHS[dataset], compression, 'videos')
     images_path = join(data_path, DATASET_PATHS[dataset], compression, 'images')
     random.seed(datetime.now())
-    for video in tqdm(sorted(os.listdir(videos_path)[first_video:last_video])):
+    for video in tqdm(sorted(os.listdir(videos_path))[first_video:last_video]):
         image_folder = video.split('.')[0]
         extract_frames(join(videos_path, video),
                        images_path, image_folder, frames)
