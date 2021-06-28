@@ -33,8 +33,8 @@ def main(_argv):
         solver_object.save_dataset(file_name=FLAGS.saved_file_name)
         logging.info("Weights saved")
 
-    # solver_object.train(test_file=FLAGS.test_file, split_dataset=FLAGS.split_dataset)
-    solver_object.train_NN(testset_path='ff_test_199_crop.pkl')
+    solver_object.train(test_file=FLAGS.test_file, split_dataset=FLAGS.split_dataset)
+    # solver_object.train_NN(testset_path='ff_test_199_crop.pkl')
     logging.info("Training finished")
 
     # solver_object.visualize()

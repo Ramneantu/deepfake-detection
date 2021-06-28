@@ -3,6 +3,7 @@ from absl import app, flags, logging
 from absl.flags import FLAGS
 
 import os
+import cv2
 
 import torch
 import random
@@ -21,31 +22,38 @@ from PIL import Image
 from lime import lime_image
 from skimage.segmentation import mark_boundaries
 
+import pickle
+
 # from network.models import model_selection
 # from dataset.transform import xception_default_data_transforms, get_pil_transform, get_preprocess_transform
 # from detect_from_video import predict_with_model, get_boundingbox
 
 flags.DEFINE_string('img_path', None, 'Path to images to be explained')
-flags.DEFINE_string('model_path', './model/', 'Path to foledr with models')
+flags.DEFINE_string('model_path', './models/', 'Path to foledr with models')
 flags.DEFINE_string('model_name', None, 'Name of saved model')
 
 
 def load_model(model_path: str=None, model_name: str=None):
-    pass
-    return None
+    pkl_file = open(model_path + model_name, 'rb')
+    model = pickle.load(pkl_file)
+    pkl_file.close()
+    return model
 
 
-def get_image(img_path: str=None):
-    pass
-    return None
+# def get_image(img_path: str=None):
+#     pass
+#     return None
 
 
 def batch_predict(images):
     pass
+    # first, call the preprocessing functions
+    # for this: check compute_data in FrequencySolver
+
     return None
 
 
-if __name__ == '__main__':
+def main(_argv):
     logging.info("Start explainability")
 
     model = load_model(FLAGS.model_path, FLAGS.model_name)
@@ -56,8 +64,8 @@ if __name__ == '__main__':
         directory = os.path.join(FLAGS.img_path, kind)
         index = 0
 
-        for filename in os.listdir(dir):
-            img = get_image(os.path.join(dir, filename))
+        for filename in os.listdir(directory):
+            img = cv2.imread(os.path.join(directory, filename))
 
             explanation = explainer.explain_instance(image=img,
                                                      classifier_fn=batch_predict,
@@ -71,4 +79,9 @@ if __name__ == '__main__':
             text = 'fake_classified' if explanation.top_labels[0] == 1 else 'real-classified'
             plt.imsave(os.path.join(FLAGS.img_path, text, filename), img_boundry)
 
+if __name__ == '__main__':
+    try:
+        app.run(main)
+    except SystemExit:
+        pass
 
