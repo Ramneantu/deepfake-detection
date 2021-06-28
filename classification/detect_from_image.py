@@ -20,6 +20,7 @@ import pathlib
 import logging
 from PIL import Image
 import torch.nn.functional as F
+from torch.utils.tensorboard import SummaryWriter
 
 from network.models import model_selection
 from dataset.transform import xception_default_data_transforms
@@ -217,6 +218,7 @@ def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25)
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
 
+
     for epoch in tqdm(range(num_epochs), desc=' Epoch', bar_format='{desc:6}:{percentage:3.0f}%|{bar:40}{r_bar}{bar:-30b}', file=sys.stdout, position=0):
         # print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         # print('-' * 10)
@@ -230,10 +232,15 @@ def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25)
                 model.eval()   # Set model to evaluate mode
                 # print("Validating...")
 
-            running_loss = 0.0
-            running_corrects = 0
+            running_loss_epoch = 0.0
+            running_corrects_epoch = 0
+
+            running_loss_batch = 0
+            running_corrects_batch = 0
+            running_count_batch = 0
 
             # Iterate over data.
+            batch_couter = 0
             for inputs, labels in tqdm(dataloaders[phase], file=sys.stdout, bar_format='{desc:6}:{percentage:3.0f}%|{bar:40}{r_bar}{bar:-30b}', desc=' {}'.format(phase), position=1, leave=False):
                 inputs = inputs.to(device)
                 labels = labels.to(device)
@@ -259,11 +266,23 @@ def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25)
 
                 # statistics
                 # changed accumulation vars to free memory
-                running_loss += float(loss.item() * inputs.size(0))
-                running_corrects += float(torch.sum(preds == labels.data))
+                running_loss_epoch += float(loss.item() * inputs.size(0))
+                running_corrects_epoch += float(torch.sum(torch.eq(preds, labels)))
 
-            epoch_loss = running_loss / len(dataloaders[phase].dataset)
-            epoch_acc = running_corrects / len(dataloaders[phase].dataset)
+                running_loss_batch += float(loss.item() * inputs.size(0))
+                running_corrects_batch += float(torch.sum(torch.eq(preds, labels)))
+                running_count_batch += len(labels)
+                batch_couter += 1
+                if batch_couter % 10 == 0:
+                    writer.add_scalar('{} loss'.format(phase), running_loss_batch / 10, epoch * len(dataloaders[phase]) + batch_couter)
+                    writer.add_scalar('{} acc'.format(phase), running_corrects_batch / running_count_batch, epoch * len(dataloaders[phase]) + batch_couter)
+                    running_loss_batch = 0
+                    running_corrects_batch = 0
+                    running_count_batch = 0
+
+
+            epoch_loss = running_loss_epoch / len(dataloaders[phase].dataset)
+            epoch_acc = running_corrects_epoch / len(dataloaders[phase].dataset)
             # print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc))
             logging.info('Epoch {}: {}\t Loss: {:.4f} Acc: {:.4f}'.format(epoch, phase, epoch_loss, epoch_acc))
 
@@ -301,6 +320,7 @@ if __name__ == '__main__':
 
     logging.basicConfig(filename='../data/experiments.log', format='%(asctime)s %(message)s', level=logging.INFO)
     logging.info('-------------------- Starting new run --------------------')
+    writer = SummaryWriter(os.path.join('runs', args.img_path))
     # test_on_images(**vars(args))
     if args.model_path == None:
         model, dataloaders, criterion, optimizer, device = setup_training(args.img_path, args.model_path, args.full, args.cuda)
@@ -310,3 +330,4 @@ if __name__ == '__main__':
         model, device = load_model(args.model_path, args.cuda, args.full)
         dataloaders = initialize_dataloaders(args.img_path)
         test_model(model, dataloaders, device)
+    writer.close()
