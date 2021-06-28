@@ -5,10 +5,9 @@ import numpy as np
 import utils as ut
 from tqdm import tqdm
 
-trained_pred_path = ("/Users/emrekavak/Documents/Ethical_AI/repo/proj-4/" +
-                     "Face-X-Ray-master/shape_predictor_68_face_landmarks.dat")
-landmark_path = "/Users/emrekavak/Desktop/celebA-Transformed/"
-img_dir_path = "/Users/emrekavak/Desktop/celebA-Transformed/"
+trained_pred_path = ("/home/deepfake/emre/repo/proj-4/Face-X-Ray-master/shape_predictor_68_face_landmarks.dat")
+landmark_path = "/home/deepfake/emre/repo/proj-4/Face-Xray-master/Dataset/landmarks/"
+img_dir_path = "/home/deepfake/emre/repo/proj-4/Face-Xray-master/Dataset/images/"
 
 
 class LandmarkDatabaseGenerator():

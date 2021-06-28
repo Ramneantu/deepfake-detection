@@ -16,9 +16,9 @@ from tqdm import tqdm
 # and implement directory creation (right now, certain dirs have to exist
 # before)
 
-landmark_path = "/Users/emrekavak/Desktop/celebA-Transformed/landmark_db.txt"
-img_dir_path = "/Users/emrekavak/Desktop/celebA-Transformed/"
-data_set_path = "/Users/emrekavak/Desktop/DataSet/celebA-Xray/"
+landmark_path = "/home/deepfake/emre/repo/proj-4/Face-Xray-master/Dataset/landmarks/landmark_db.txt"
+img_dir_path = "/home/deepfake/emre/repo/proj-4/Face-Xray-master/Dataset/images/"
+data_set_path = "/home/deepfake/emre/repo/proj-4/Face-Xray-master/Dataset/images/createdData/"
 
 
 def random_get_hull(landmark, img1):
@@ -122,7 +122,7 @@ class DataSetGenerator():
         self.image_names = self._get_images(image_path)
         self.image_path = image_path
         self.data_set_path = data_set_path
-        self.distortion = iaa.Sequential([iaa.PiecewiseAffine(scale=(0.01, 0.05))])
+        self.distortion = iaa.Sequential([iaa.PiecewiseAffine(scale=(0.01, 0.15))])
 
     def _get_images(self, img_dir_path):
         return [i for i in os.listdir(img_dir_path) if i.lower().endswith((".png", ".jpg", ".jpeg"))]
@@ -143,7 +143,7 @@ class DataSetGenerator():
         foreground_face = io.imread(self.image_path+foreground_face_path)
         
         # down sample before blending
-        down_sample_factor = random.uniform(0.4, 1)
+        down_sample_factor = random.uniform(0.6, 1)
         aug_size_y = int(im_y*down_sample_factor)
         aug_size_x = int(im_x*down_sample_factor)
         background_landmark[:, 0] = background_landmark[:, 0] * (aug_size_x/im_x)
@@ -222,7 +222,7 @@ class DataSetGenerator():
                     + ("/fake/" if fake else "/real/")
                     + img_name.split(".")[0]
                     + ("_fake" if fake else "_real")+".jpeg",
-                    quality=random.randint(60, 100))
+                    quality=random.randint(80, 100))
 
 
 def main():
