@@ -51,8 +51,15 @@ class DeepFreq(pl.LightningModule):
         return loss, correct
 
     def training_step(self, batch, batch_idx):
-        loss, _ = self.general_step(batch, batch_idx, "train")
-        return {'loss': loss}
+        loss, correct = self.general_step(batch, batch_idx, "train")
+        return {'loss': loss, 'correct': correct}
+
+    def training_epoch_end(self, outputs):
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        tens = torch.cat([x['correct'] for x in outputs], dim=0).double()
+        acc = tens.mean()
+        self.log('train_loss', avg_loss)
+        self.log('train_acc', acc)
 
     def validation_step(self, batch, batch_idx):
         loss, correct = self.general_step(batch, batch_idx, "val")

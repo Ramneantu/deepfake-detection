@@ -2,6 +2,7 @@
 frequency_analysis/data*
 frequency_analysis/img*
 frequency_analysis/lightning_logs
+lightning_logs
 *.pyc
 /data
 .vscode
