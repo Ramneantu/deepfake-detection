@@ -5,18 +5,25 @@ from .FreqDataset import FreqDataset
 from torch.utils.data import random_split
 
 
-def dataset_split(data: np.ndarray, label: np.ndarray, train_p):
+def dataset_split(data: np.ndarray, label: np.ndarray, train_p, with_testset=False):
     """
     Create training and validation datasets
+
+    Returns: (train_dataset, val_dataset, test_dataset), where test_dataset can be None if with_testset=False
     """
     if train_p < 0 or train_p > 1:
         raise ValueError("train_p should be between 0 and 1")
     dataset = FreqDataset(data, label)
     total_size = len(dataset)
-    return random_split(dataset, [round(total_size * train_p),
-                                  round(total_size * (1 - train_p)/2),
-                                  total_size - round(total_size * train_p) - round(total_size * (1 - train_p)/2)])
 
+    if with_testset is True:
+        return random_split(dataset, [round(total_size * train_p),
+                                      round(total_size * (1 - train_p)/2),
+                                      total_size - round(total_size * train_p) - round(total_size * (1 - train_p)/2)])
+    else:
+        train_dataset, val_dataset = random_split(dataset, [round(total_size * train_p),
+                                                            round(total_size * (1 - train_p))])
+        return train_dataset, val_dataset, None
 
 def get_frequencies(img: np.ndarray, epsilon: float):
     """

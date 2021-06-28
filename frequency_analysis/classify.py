@@ -34,7 +34,7 @@ def main(_argv):
         logging.info("Weights saved")
 
     # solver_object.train(test_file=FLAGS.test_file, split_dataset=FLAGS.split_dataset)
-    solver_object.train_NN()
+    solver_object.train_NN(testset_path='ff_test_199_crop.pkl')
     logging.info("Training finished")
 
     # solver_object.visualize()

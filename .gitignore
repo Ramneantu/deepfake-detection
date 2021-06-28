@@ -6,3 +6,4 @@ frequency_analysis/lightning_logs
 /data
 .vscode
 frequency_analysis/runs/*
+frequency_analysis/models

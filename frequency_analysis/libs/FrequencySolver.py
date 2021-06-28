@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 
 from . import commons
+from .FreqDataset import FreqDataset
 from .freq_nn import DeepFreq
 
 import glob
@@ -111,7 +112,7 @@ class FrequencySolver:
             label = np.zeros([self.num_iter])
 
         # data = np.zeros([self.num_iter, self.features])
-        data = np.zeros(([self.num_iter, 1400]))
+        data = np.zeros(([self.num_iter, 300]))
         file_num = 0
 
         for filename in glob.glob(path + "/*"):
@@ -123,7 +124,7 @@ class FrequencySolver:
                 img = img[h:-h, w:-w]
 
             images = [img]
-            no_splits = 2
+            no_splits = 1
             # TODO: schimba parametrii in for loop si in method call
             for split in range(1, no_splits):
                 blocks = commons.split_image(img, 3 * split)
@@ -148,7 +149,7 @@ class FrequencySolver:
 
         return data, label
 
-    def train(self, split_dataset: bool = True, test_file: str = 'dataset.pkl', iterations: int = 10):
+    def train(self, split_dataset: bool = True, test_file: str = 'dataset.pkl', iterations: int = 1):
         """
         This is the training function that uses shallow ml classifiers.
         :param split_dataset: If split is True, the function splits one dataset and uses 20% of it for testing. Else, you
@@ -178,64 +179,71 @@ class FrequencySolver:
             X_test = loaded_data["data"]
             y_test = loaded_data["label"]
 
-            svclassifier = SVC(kernel='linear')
-            svclassifier.fit(X_train, y_train)
+            # svclassifier = SVC(kernel='linear')
+            # svclassifier.fit(X_train, y_train)
 
             svclassifier_r = SVC(C=6.37, kernel='rbf', gamma=0.86)
             svclassifier_r.fit(X_train, y_train)
 
-            svclassifier_p = SVC(kernel='poly', verbose=1)
-            svclassifier_p.fit(X_train, y_train)
+            # svclassifier_p = SVC(kernel='poly')
+            # svclassifier_p.fit(X_train, y_train)
+            #
+            # logreg = LogisticRegression(solver='liblinear', max_iter=1000)
+            # logreg.fit(X_train, y_train)
 
-            logreg = LogisticRegression(solver='liblinear', max_iter=1000)
-            logreg.fit(X_train, y_train)
-
-            SVM = svclassifier.score(X_test, y_test)
+            # SVM = svclassifier.score(X_test, y_test)
             SVM_r = svclassifier_r.score(X_test, y_test)
-            SVM_p = svclassifier_p.score(X_test, y_test)
-            LR = logreg.score(X_test, y_test)
+            # SVM_p = svclassifier_p.score(X_test, y_test)
+            # LR = logreg.score(X_test, y_test)
 
         else:
-            LR = 0
-            SVM = 0
+            # LR = 0
+            # SVM = 0
             SVM_r = 0
-            SVM_p = 0
+            # SVM_p = 0
 
             for i in range(iterations):
                 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-                svclassifier = SVC(kernel='linear')
-                svclassifier.fit(X_train, y_train)
+                # svclassifier = SVC(kernel='linear')
+                # svclassifier.fit(X_train, y_train)
 
                 svclassifier_r = SVC(C=6.37, kernel='rbf', gamma=0.86)
                 svclassifier_r.fit(X_train, y_train)
 
-                svclassifier_p = SVC(kernel='poly')
-                svclassifier_p.fit(X_train, y_train)
-
-                logreg = LogisticRegression(solver='liblinear', max_iter=1000)
-                logreg.fit(X_train, y_train)
-
-                SVM += svclassifier.score(X_test, y_test)
+                # svclassifier_p = SVC(kernel='poly')
+                # svclassifier_p.fit(X_train, y_train)
+                #
+                # logreg = LogisticRegression(solver='liblinear', max_iter=1000)
+                # logreg.fit(X_train, y_train)
+                #
+                # SVM += svclassifier.score(X_test, y_test)
                 SVM_r += svclassifier_r.score(X_test, y_test)
-                SVM_p += svclassifier_p.score(X_test, y_test)
-                LR += logreg.score(X_test, y_test)
+                # SVM_p += svclassifier_p.score(X_test, y_test)
+                # LR += logreg.score(X_test, y_test)
 
-        print("(Average) SVM: " + str(SVM / iterations))
+        # print("(Average) SVM: " + str(SVM / iterations))
         print("(Average) SVM_r: " + str(SVM_r / iterations))
-        print("(Average) SVM_p: " + str(SVM_p / iterations))
-        print("(Average) LR: " + str(LR / iterations))
+        # print("(Average) SVM_p: " + str(SVM_p / iterations))
+        # print("(Average) LR: " + str(LR / iterations))
+
+        # Finally we save the model
+        # TODO: make a flag for this!
+        output_name = './models/pretrained_SVM_r.pkl'
+        output = open(output_name, 'wb')
+        pickle.dump(svclassifier_r, output)
+        output.close()
 
         if FLAGS.save_results:
             f = open('./data/results.txt', 'a+')
             experiment_number = str(FLAGS.experiment_num)
             f.write("Results for experiment " + experiment_number + "\n" +
-                    "(Average) SVM: " + str(SVM / iterations) + '\n' +
-                    "(Average) SVM_r: " + str(SVM_r / iterations) + '\n' +
-                    "(Average) SVM_p: " + str(SVM_p / iterations) + '\n' +
-                    "(Average) LR: " + str(LR / iterations) + '\n\n')
+                    # "(Average) SVM: " + str(SVM / iterations) + '\n' +
+                    "(Average) SVM_r: " + str(SVM_r / iterations) + '\n' )
+                    # + "(Average) SVM_p: " + str(SVM_p / iterations) + '\n' +
+                    # "(Average) LR: " + str(LR / iterations) + '\n\n')
 
-    def train_NN(self):
+    def train_NN(self, with_trainset=False, testset_path=None):
         # Precomputed data is saved in self.data
         X = self.data["data"].astype(np.float32)
         y = self.data["label"].astype(np.longlong)
@@ -246,9 +254,16 @@ class FrequencySolver:
 
         # Define training, validation (and test) datasets
         phases = ['train', 'val', 'test']
-        train_dataset, val_dataset, test_dataset = commons.dataset_split(X, y, 0.1)
-        val_dataset = train_dataset
-        test_dataset = train_dataset
+        if with_trainset is True:
+            train_dataset, val_dataset, test_dataset = commons.dataset_split(X, y, 0.8, with_testset=True)
+        else:
+            train_dataset, val_dataset, _ = commons.dataset_split(X, y, 0.8)
+
+            pkl_file = open('./data/' + testset_path, 'rb')
+            testset = pickle.load(pkl_file)
+            pkl_file.close()
+
+            test_dataset = FreqDataset(testset["data"].astype(np.float32), testset["label"].astype(np.longlong))
 
         dataset_dict = {
             'train': train_dataset,
@@ -259,26 +274,33 @@ class FrequencySolver:
         # Define some hyperparameters
         h_params = {
             "lr": 0.0001,
-            "weight_decay": 1,
-            "batch_size": 1
+            "weight_decay": 0.00000001,
+            "batch_size": 256
         }
 
         freq_logger = TensorBoardLogger(save_dir="lightning_logs")
 
         early_stop_callback = EarlyStopping(
             monitor='val_loss',
-            patience=5
+            patience=20
         )
+
+        def weights_init(m):
+            classname = m.__class__.__name__
+            if classname.find('Linear') != -1:
+                torch.nn.init.kaiming_uniform_(m.weight)
 
         # Define model
         model = DeepFreq(h_params=h_params)
+
+        model.apply(weights_init)
 
         from torch.utils.tensorboard import SummaryWriter
         writer = SummaryWriter('runs/freq_net')
         writer.add_graph(model.to(device="cuda"), torch.Tensor(X[0]).cuda())
         writer.close()
 
-        summary(model.cuda(), (1,1400))
+        # summary(model.cuda(), (1,1400))
         # Dataloader
         dataloader_dict = {
             x: torch.utils.data.DataLoader(dataset_dict[x], batch_size=h_params['batch_size'], shuffle=True) if x ==
@@ -286,12 +308,11 @@ class FrequencySolver:
             torch.utils.data.DataLoader(dataset_dict[x], batch_size=h_params['batch_size'], shuffle=False)
             for x in phases}
 
-        # TODO: trainer has a flag auto_lr_find=True
         # Trainer
         trainer = pl.Trainer(
-            max_epochs=30,
+            max_epochs=300,
             gpus=1 if str(device) == 'cuda' else None,
-            # callbacks=[early_stop_callback],
+            callbacks=[early_stop_callback],
             logger=freq_logger,
         )
 
@@ -328,7 +349,7 @@ class FrequencySolver:
 
     def save_dataset(self, file_name: str = 'dataset'):
         if file_name == 'dataset':
-            logging.warning('No specific name given to save weights')
+            logging.warning('No specific name given to save inputs')
         output_name = './data/' + file_name
         output = open(output_name, 'wb')
         pickle.dump(self.data, output)

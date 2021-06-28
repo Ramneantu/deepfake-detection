@@ -13,27 +13,34 @@ class DeepFreq(pl.LightningModule):
         self.n_hidden = n_hidden
 
         # Layers of model
-        self.scaling_layer = ScalingLayer(parameters_in)
-        self.scaling_layer.cuda()
+        # self.scaling_layer = ScalingLayer(parameters_in)
+        # self.scaling_layer.cuda()
         self.FC = nn.Sequential(
-            nn.Linear(in_features=parameters_in, out_features=500),
+            nn.Linear(in_features=parameters_in, out_features=700),
             nn.PReLU(),
-            nn.Linear(in_features=500, out_features=80),
+            nn.Linear(in_features=700, out_features=250),
             nn.PReLU(),
-            nn.Linear(in_features=80, out_features=2),
+            nn.Linear(in_features=250, out_features=80),
             nn.PReLU(),
-            nn.Softmax(dim=1)
+            nn.Linear(in_features=80, out_features=20),
+            nn.PReLU(),
+            nn.Linear(in_features=20, out_features=2),
+            nn.PReLU(),
+            # nn.Softmax(dim=1)
         )
 
     def forward(self, x):
-        scaled_x = self.scaling_layer(x)
-        predictions = self.FC(scaled_x)
+        # scaled_x = self.scaling_layer(x)
+        predictions = self.FC(x)
 
         return predictions
 
     def general_step(self, batch, batch_idx, mode):
         signals, labels = batch
         probabilities = self.forward(signals)
+        # print(probabilities)
+        # print(labels)
+
 
         entropy_loss = nn.CrossEntropyLoss()
         loss = entropy_loss(probabilities, labels)
@@ -93,7 +100,7 @@ class ScalingLayer(nn.Module):
         nn.init.uniform_(self.weight)
 
     def forward(self, x):
-        return nn.ReLU()(x * self.weight)
-
+        # return nn.ReLU()(x * self.weight)
+        return x * self.weight
 
 
