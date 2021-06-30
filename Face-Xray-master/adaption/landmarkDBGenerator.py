@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 trained_pred_path = ("/home/deepfake/emre/repo/proj-4/Face-X-Ray-master/shape_predictor_68_face_landmarks.dat")
 landmark_path = "/home/deepfake/emre/repo/proj-4/Face-Xray-master/Dataset/landmarks/"
-img_dir_path = "/home/deepfake/emre/repo/proj-4/Face-Xray-master/Dataset/images/"
+img_dir_path = "/home/deepfake/emre/repo/proj-4/Face-Xray-master/Dataset/images/original/"
 
 
 class LandmarkDatabaseGenerator():

@@ -17,7 +17,7 @@ from tqdm import tqdm
 # before)
 
 landmark_path = "/home/deepfake/emre/repo/proj-4/Face-Xray-master/Dataset/landmarks/landmark_db.txt"
-img_dir_path = "/home/deepfake/emre/repo/proj-4/Face-Xray-master/Dataset/images/"
+img_dir_path = "/home/deepfake/emre/repo/proj-4/Face-Xray-master/Dataset/images/original/"
 data_set_path = "/home/deepfake/emre/repo/proj-4/Face-Xray-master/Dataset/images/createdData/"
 
 
