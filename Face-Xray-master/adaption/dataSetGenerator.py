@@ -192,7 +192,7 @@ class DataSetGenerator():
 
             # randomly downsample after BI pipeline
             if random.randint(0, 1):
-                down_sample_factor = random.uniform(0.4, 1)
+                down_sample_factor = random.uniform(0.6, 1)
                 aug_size_y = int(im_y*down_sample_factor)
                 aug_size_x = int(im_x*down_sample_factor)
                 face_img = Image.fromarray(face_img)
