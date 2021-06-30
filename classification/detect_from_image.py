@@ -25,6 +25,7 @@ from torch.utils.tensorboard import SummaryWriter
 from network.models import model_selection
 from dataset.transform import xception_default_data_transforms
 from detect_from_video import predict_with_model, get_boundingbox
+from network.utils import LRScheduler, EarlyStopping
 
 LEARNING = ['finetuning', 'full']
 
@@ -205,12 +206,12 @@ def setup_training(img_path, model_path, full, cuda = True):
             params_to_update.append(param)
             print("\t", name)
 
-    optimizer = optim.Adam(params_to_update, lr=0.0002, weight_decay=1e-5)
+    optimizer = optim.Adam(params_to_update, lr=0.001, weight_decay=1e-5)
     criterion = nn.CrossEntropyLoss()
 
     return model, dataloaders_dict, criterion, optimizer, device
 
-def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25):
+def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25, early_stopping=False, lr_decay=False):
     since = time.time()
 
     val_acc_history = []
@@ -218,7 +219,12 @@ def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25)
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
 
+    if lr_decay:
+        lr_scheduler = LRScheduler(optimizer)
+    if early_stopping:
+        early_stopper = EarlyStopping()
 
+    training_finished = False
     for epoch in tqdm(range(num_epochs), desc=' Epoch', bar_format='{desc:6}:{percentage:3.0f}%|{bar:40}{r_bar}{bar:-30b}', file=sys.stdout, position=0):
         # print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         # print('-' * 10)
@@ -287,14 +293,21 @@ def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25)
             logging.info('Epoch {}: {}\t Loss: {:.4f} Acc: {:.4f}'.format(epoch, phase, epoch_loss, epoch_acc))
 
             # deep copy the model
-            if phase == 'val' and epoch_acc > best_acc:
-                best_acc = epoch_acc
-                best_model_wts = copy.deepcopy(model.state_dict())
             if phase == 'val':
                 val_acc_history.append(epoch_acc)
+                if epoch_acc > best_acc:
+                    best_acc = epoch_acc
+                    best_model_wts = copy.deepcopy(model.state_dict())
+                if lr_decay:
+                    lr_scheduler(epoch_loss)
+                if early_stopping:
+                    early_stopper(epoch_loss)
+                    if early_stopper.early_stop:
+                        training_finished = True
 
+        if training_finished:
+            break
         torch.save(best_model_wts, f'../data/models/xception_e{epoch + 1}')
-        # print()
 
     time_elapsed = time.time() - since
     print('Training completed in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
@@ -309,22 +322,21 @@ def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25)
 if __name__ == '__main__':
     p = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    # p.add_argument('--real_path', '-r', type=str)
-    # p.add_argument('--fake_path', '-f', type=str)
     p.add_argument('--img_path', '-i', type=str)
     p.add_argument('--model_path', '-mi', type=str, default=None)
     p.add_argument('--full', '-l', action='store_true')
     p.add_argument('--epochs', '-e', type=int, default=5)
     p.add_argument('--cuda', action='store_true')
+    p.add_argument('--lr_decay', action='store_true')
+    p.add_argument('--early_stopping', action='store_true')
     args = p.parse_args()
 
     logging.basicConfig(filename='../data/experiments.log', format='%(asctime)s %(message)s', level=logging.INFO)
     logging.info('-------------------- Starting new run --------------------')
-    writer = SummaryWriter(os.path.join('runs', args.img_path))
-    # test_on_images(**vars(args))
+    writer = SummaryWriter(os.path.join('../data', 'cnn-runs'))
     if args.model_path == None:
         model, dataloaders, criterion, optimizer, device = setup_training(args.img_path, args.model_path, args.full, args.cuda)
-        model, *_ = train_model(model, dataloaders, criterion, optimizer, device, args.epochs)
+        model, *_ = train_model(model, dataloaders, criterion, optimizer, device, args.epochs, args.early_stopping, args.lr_decay)
         test_model(model, dataloaders, device)
     else:
         model, device = load_model(args.model_path, args.cuda, args.full)
