@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 landmark_path = "/home/deepfake/emre/repo/proj-4/Face-Xray-master/Dataset/landmarks/landmark_db.txt"
 img_dir_path = "/home/deepfake/emre/repo/proj-4/Face-Xray-master/Dataset/images/original/"
-data_set_path = "/home/deepfake/emre/repo/proj-4/Face-Xray-master/Dataset/images/createdData"
+data_set_path = "/home/deepfake/emre/repo/proj-4/Face-Xray-master/Dataset/images"
 
 
 def random_get_hull(landmark, img1):
@@ -122,7 +122,7 @@ class DataSetGenerator():
         self.image_names = self._get_images(image_path)
         self.image_path = image_path
         self.data_set_path = data_set_path
-        self.distortion = iaa.Sequential([iaa.PiecewiseAffine(scale=(0.01, 0.15))])
+        self.distortion = iaa.Sequential([iaa.PiecewiseAffine(scale=(0.01, 0.05))])
 
     def _get_images(self, img_dir_path):
         return [i for i in os.listdir(img_dir_path) if i.lower().endswith((".png", ".jpg", ".jpeg"))]
@@ -143,7 +143,7 @@ class DataSetGenerator():
         foreground_face = io.imread(self.image_path+foreground_face_path)
         
         # down sample before blending
-        down_sample_factor = random.uniform(0.6, 1)
+        down_sample_factor = random.uniform(0.5, 1)
         aug_size_y = int(im_y*down_sample_factor)
         aug_size_x = int(im_x*down_sample_factor)
         background_landmark[:, 0] = background_landmark[:, 0] * (aug_size_x/im_x)
@@ -182,7 +182,10 @@ class DataSetGenerator():
             if self.landmarks_db.get(img_name) == None:
                 continue
             if fake:
-                face_img, mask = self.get_blended_face(background_face_path)
+                try:
+                    face_img, mask = self.get_blended_face(background_face_path)
+                except:
+                    continue
             else:
                 face_img = io.imread(self.image_path+background_face_path)
                 mask = np.zeros((face_img.shape[0], face_img.shape[1], 1))
