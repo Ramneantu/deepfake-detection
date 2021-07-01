@@ -1,9 +1,9 @@
 import cv2
 import numpy as np
 
-from . import commons
-from .FreqDataset import FreqDataset
-from .freq_nn import DeepFreq
+from frequencyAnalysis.libs import commons
+from frequencyAnalysis.libs.FreqDataset import FreqDataset
+from frequencyAnalysis.libs.freq_nn import DeepFreq
 
 import glob
 from matplotlib import pyplot as plt

@@ -133,7 +133,7 @@ def explainExistingModels(load_model, model_batch_predict, oneIsFake=False):
             modelName = os.path.basename(m).split(".")[0]
             if args.all_explain_data_path is not None:
                 for data in os.listdir(args.all_explain_data_path):
-                    explain(os.path.join(args.explain_data_path, data), 
+                    explain(os.path.join(args.all_explain_data_path, data), 
                             modelName,
                             model_batch_predict(model),
                             oneIsFake)
