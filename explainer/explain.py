@@ -70,7 +70,7 @@ def createDatasetFolder(datasetName, modelNameSpecs):
     os.mkdir(os.path.join(dirName, "TrueReal"))
     os.mkdir(os.path.join(dirName, "FalseReal"))
 
-def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake=False):
+def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake):
     """
     batch_predict: needs to handle preprocessing and resizing
 
@@ -112,34 +112,50 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake=False):
             plt.imsave(os.path.join(datasetName, modelNameSpecs, classifiedAs, filename), img_boundary)            
 
 
-def explainExistingModels(load_model, model_batch_predict):
+def explainExistingModels(load_model, model_batch_predict, oneIsFake=False):
+    """
+    all_models_path: directory of a specific architecture that may have different model/weight files
+                e.g.: XceptionModels --> XceptionTrainedOnFF30k_full.pickle, XceptionTrainedOnCelebA_finetuning.pickle, ...
+    explaing_data_path: 
+    """
     p = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    p.add_argument('--features', '-f', type=int, default=10)
+    p.add_argument('--all_models_path', '-amp', type=str, default=None)
     p.add_argument('--model_path', '-mp', type=str, default=None)
     p.add_argument('--explain_data_path', '-ed', type=str, default=None)
-    p.add_argument('--explain_all_data', '-ead', action='store_true')
-    p.add_argument('--explain_all_models', '-eam', action='store_true')
+    p.add_argument('--all_explain_data_path', '-aed', type=str, default=None)
 
     args = p.parse_args()
 
-    if args.model_path is None and not(args.explain_all_models):
-        print("Please specify a model path or select -eam (explain all given models")
-        return
+    if args.all_models_path is not None:
+        for m in os.listdir(args.all_models_path):
+            model = load_model(os.path.join(args.all_models_path, m))
+            modelName = os.path.basename(m).split(".")[0]
+            if args.all_explain_data_path is not None:
+                for data in os.listdir(args.all_explain_data_path):
+                    explain(os.path.join(args.explain_data_path, data), 
+                            modelName,
+                            model_batch_predict(model),
+                            oneIsFake)
+            else:
+                explain(args.explain_data_path, 
+                        modelName,
+                        model_batch_predict(model),
+                        oneIsFake)
 
-    if args.explain_data_path is None and not(args.explain_all_data):
-        print("Please specify the dataset to be explained or select -ead (explain all existing datasets")
-        return
 
-    if args.explain_all_data:
-        # explain all in EXPLAIN_DATA_PATH
-        None
-    
     else:
         # take explain data from given data path
         model = load_model(args.model_path)
         modelName = os.path.basename(args.model_path).split(".")[0]
-        explain(args.explain_data_path, 
+        if args.all_explain_data_path is not None:
+            for data in os.listdir(args.all_explain_data_path):
+                explain(os.path.join(args.explain_data_path, data), 
+                        modelName,
+                        model_batch_predict(model),
+                        oneIsFake)
+        else:
+            explain(args.explain_data_path, 
                     modelName,
                     model_batch_predict(model),
-                    oneIsFake=True)
+                    oneIsFake)

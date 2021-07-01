@@ -51,4 +51,4 @@ def load_model_from_object(model_path):
 
 
 if __name__ == '__main__':
-    exp.explainExistingModels(load_model, model_batch_predict)
+    exp.explainExistingModels(load_model, model_batch_predict, oneIsFake=False)
