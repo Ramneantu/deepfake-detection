@@ -8,6 +8,8 @@ from .freq_nn import DeepFreq
 import glob
 from matplotlib import pyplot as plt
 import pickle
+from PIL import Image as pil_image
+import os
 
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
@@ -60,6 +62,12 @@ class FrequencySolver:
         :param saved_data: pickle file with saved data
         :param crop: set to true if while processing you wish to crop the face area
         """
+        self.compute_data_flag = compute_data
+        self.reals_path = reals_path
+        self.fakes_path = fakes_path
+        self.saved_data = saved_data
+        self.crop = crop
+
         # sanity checks
         if compute_data is True and ((reals_path is None) or (fakes_path is None)):
             raise Exception('No data path given')
@@ -122,7 +130,6 @@ class FrequencySolver:
                 h = img.shape[0] // 3
                 w = img.shape[1] // 3
                 img = img[h:-h, w:-w]
-
             images = [img]
             no_splits = 1
             # TODO: schimba parametrii in for loop si in method call
@@ -208,7 +215,7 @@ class FrequencySolver:
                 # svclassifier = SVC(kernel='linear')
                 # svclassifier.fit(X_train, y_train)
 
-                svclassifier_r = SVC(C=6.37, kernel='rbf', gamma=0.86)
+                svclassifier_r = SVC(C=6.37, kernel='rbf', gamma=0.86, probability=True)
                 svclassifier_r.fit(X_train, y_train)
 
                 # svclassifier_p = SVC(kernel='poly')
@@ -229,10 +236,13 @@ class FrequencySolver:
 
         # Finally we save the model
         # TODO: make a flag for this!
-        output_name = './models/pretrained_SVM_r.pkl'
-        output = open(output_name, 'wb')
-        pickle.dump(svclassifier_r, output)
-        output.close()
+        self.type = "svm"
+        self.classifier = svclassifier_r
+        # output_name = './data/models/pretrained_SVM_r.pkl'
+        # output = open(output_name, 'wb')
+        # # pickle.dump(svclassifier_r, output)
+        # pickle.dump(self, output)
+        # output.close()
 
         if FLAGS.save_results:
             f = open('./data/results.txt', 'a+')
@@ -321,6 +331,17 @@ class FrequencySolver:
 
         # Test
         trainer.test(test_dataloaders=dataloader_dict['test'])
+
+        self.type = "nn"
+        self.classifier_state_dict = model.state_dict()
+        self.parameters_in = model.parameters_in
+        self.parameters_out = model.parameters_out
+        self.h_params = model.h_params
+        self.n_hidden = model.n_hidden
+        # output_name = './data/models/pretrained_NN.pkl'
+        # output = open(output_name, 'wb')
+        # pickle.dump(self, output)
+        # output.close()
 
     def visualize(self):
         """

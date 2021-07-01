@@ -155,3 +155,19 @@ def interpolate_features(psd1D: np.ndarray = None, no_features: int = 300, conto
 
     return interpolated
 
+def get_feature_vector(img: np.ndarray, crop, features, epsilon: float):
+    if crop:
+        h = img.shape[0] // 3
+        w = img.shape[1] // 3
+        img = img[h:-h, w:-w]
+    images = [img]
+    no_splits = 1
+    # TODO: schimba parametrii in for loop si in method call
+    for split in range(1, no_splits):
+        blocks = split_image(img, 3 * split)
+        images = images + blocks
+    frequencies = [get_frequencies(img, epsilon) for img in images]
+    # psd1D = commons.get_frequencies(img, self.epsilon)
+    interpolated_array = [interpolate_features(psd1D, features, cnt) for (psd1D, cnt) in
+                          zip(frequencies, range(10))]
+    return np.hstack(interpolated_array)

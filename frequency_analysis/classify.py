@@ -2,6 +2,7 @@
 from libs.FrequencySolver import FrequencySolver
 from absl import app, flags, logging
 from absl.flags import FLAGS
+import pickle
 
 flags.DEFINE_integer('num_iter', 500, 'Number of images that will be used form EACH dataset, e.g. if set to 500, '
                                       'there will be 500 fake images and 500 real images used')
@@ -33,8 +34,18 @@ def main(_argv):
         solver_object.save_dataset(file_name=FLAGS.saved_file_name)
         logging.info("Weights saved")
 
-    solver_object.train(test_file=FLAGS.test_file, split_dataset=FLAGS.split_dataset)
-    # solver_object.train_NN(testset_path='ff_test_199_crop.pkl')
+    # solver_object.train(test_file=FLAGS.test_file, split_dataset=FLAGS.split_dataset)
+    solver_object.train_NN(testset_path='ff_test_199_crop.pkl')
+
+    # saving
+    if solver_object.type == "nn":
+        output_name = './data/models/pretrained_NN.pkl'
+    else:
+        output_name = './data/models/pretrained_SVM_r.pkl'
+    output = open(output_name, 'wb')
+    pickle.dump(solver_object, output)
+    output.close()
+
     logging.info("Training finished")
 
     # solver_object.visualize()

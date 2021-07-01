@@ -5,12 +5,13 @@ import pytorch_lightning as pl
 
 
 class DeepFreq(pl.LightningModule):
-    def __init__(self, h_params, parameters_in: int = 1400, parameters_out: int = 2, n_hidden: int = 2):
+    def __init__(self, h_params, parameters_in: int = 300, parameters_out: int = 2, n_hidden: int = 2):
         super().__init__()
         self.save_hyperparameters(h_params)
         self.parameters_in = parameters_in
         self.parameters_out = parameters_out
         self.n_hidden = n_hidden
+        self.h_params = h_params
 
         # Layers of model
         # self.scaling_layer = ScalingLayer(parameters_in)
