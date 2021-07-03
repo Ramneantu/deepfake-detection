@@ -7,3 +7,4 @@ lightning_logs
 /data
 .vscode
 frequency_analysis/runs/*
+nohup.out
