@@ -18,6 +18,7 @@ import math
 import numpy as np
 import pathlib
 import logging
+import datetime
 from PIL import Image
 import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
@@ -28,28 +29,35 @@ from detect_from_video import predict_with_model, get_boundingbox
 from network.utils import LRScheduler, EarlyStopping
 
 LEARNING = ['finetuning', 'full']
+DATASETS = {
+    "FF-compressed" : "../data/ff-c23-100k",
+    "FF-raw" : "../data/ff-c0-30k",
+    "X-ray" : "../data/XRay-dataset",
+    "HQ" : "../data/HQ-dataset",
+    "Fraunhofer": "../data/celebA_fraunhofer"
+}
 
-class ImageDataset(torch.utils.data.Dataset):
-    def __init__(self, root: str, folder: str, klass: int, transform=None, extension: str = "jpg"):
-        self._data = pathlib.Path(root) / folder
-        self.klass = klass
-        self.extension = extension
-        self.transform = transform
-        # Only calculate once how many files are in this folder
-        # Could be passed as argument if you precalculate it somehow
-        # e.g. ls | wc -l on Linux
-        self._length = sum(1 for entry in os.listdir(self._data))
-
-    def __len__(self):
-        # No need to recalculate this value every time
-        return self._length
-
-    def __getitem__(self, index):
-        # images always follow [0, n-1], so you access them directly
-        img = Image.open(self._data / "{}.{}".format(str(index), self.extension))
-        if self.transform is not None:
-            img = self.transform(img)
-        return img, self.klass
+# class ImageDataset(torch.utils.data.Dataset):
+#     def __init__(self, root: str, folder: str, klass: int, transform=None, extension: str = "jpg"):
+#         self._data = pathlib.Path(root) / folder
+#         self.klass = klass
+#         self.extension = extension
+#         self.transform = transform
+#         # Only calculate once how many files are in this folder
+#         # Could be passed as argument if you precalculate it somehow
+#         # e.g. ls | wc -l on Linux
+#         self._length = sum(1 for entry in os.listdir(self._data))
+#
+#     def __len__(self):
+#         # No need to recalculate this value every time
+#         return self._length
+#
+#     def __getitem__(self, index):
+#         # images always follow [0, n-1], so you access them directly
+#         img = Image.open(self._data / "{}.{}".format(str(index), self.extension))
+#         if self.transform is not None:
+#             img = self.transform(img)
+#         return img, self.klass
 
 def test_on_images(real_path, fake_path, model_path, cuda = True):
 
@@ -177,8 +185,9 @@ def test_model(model, dataloaders, device):
 
 def initialize_dataloaders(img_path, full=False):
     batch_size = 32
-    if full:
-        batch_size = 8
+    # batch_size = 32
+    # if full:
+    #     batch_size = 8
     # Create training and validation datasets
     # image_datasets = {x: ImageDataset(os.path.join(img_path, x, ), 'real', 0, xception_default_data_transforms[x]) + ImageDataset(os.path.join(img_path, x), 'fake', 1, xception_default_data_transforms[x]) for x in
     #                   ['train', 'val', 'test']}
@@ -193,10 +202,10 @@ def initialize_dataloaders(img_path, full=False):
 
     return dataloaders_dict
 
-def setup_training(img_path, model_path, full, cuda = True):
+def setup_training(dataset, model_path, full, cuda = True):
 
     model, device = load_model(model_path, cuda, full)
-
+    img_path = DATASETS[dataset]
     dataloaders_dict = initialize_dataloaders(img_path, full)
 
     print("Params to learn:")
@@ -211,7 +220,7 @@ def setup_training(img_path, model_path, full, cuda = True):
 
     return model, dataloaders_dict, criterion, optimizer, device
 
-def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25, early_stopping=False, lr_decay=False):
+def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25, early_stopping=0, lr_decay=0):
     since = time.time()
 
     val_acc_history = []
@@ -219,10 +228,10 @@ def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25,
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
 
-    if lr_decay:
-        lr_scheduler = LRScheduler(optimizer)
-    if early_stopping:
-        early_stopper = EarlyStopping()
+    if lr_decay > 0:
+        lr_scheduler = LRScheduler(optimizer, lr_decay)
+    if early_stopping > 0:
+        early_stopper = EarlyStopping(early_stopping)
 
     training_finished = False
     for epoch in tqdm(range(num_epochs), desc=' Epoch', bar_format='{desc:6}:{percentage:3.0f}%|{bar:40}{r_bar}{bar:-30b}', file=sys.stdout, position=0):
@@ -289,7 +298,6 @@ def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25,
 
             epoch_loss = running_loss_epoch / len(dataloaders[phase].dataset)
             epoch_acc = running_corrects_epoch / len(dataloaders[phase].dataset)
-            # print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc))
             logging.info('Epoch {}: {}\t Loss: {:.4f} Acc: {:.4f}'.format(epoch, phase, epoch_loss, epoch_acc))
 
             # deep copy the model
@@ -298,20 +306,21 @@ def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25,
                 if epoch_acc > best_acc:
                     best_acc = epoch_acc
                     best_model_wts = copy.deepcopy(model.state_dict())
-                if lr_decay:
+                if lr_decay > 0:
                     lr_scheduler(epoch_loss)
-                if early_stopping:
+                if early_stopping > 0:
                     early_stopper(epoch_loss)
                     if early_stopper.early_stop:
                         training_finished = True
 
         if training_finished:
             break
-        torch.save(best_model_wts, f'../data/models/xception_e{epoch + 1}')
+        # torch.save(best_model_wts, f'../data/models/xception_e{epoch + 1}')
 
     time_elapsed = time.time() - since
     print('Training completed in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
     logging.info('Training completed in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
+    logging.info('Ran for {} epochs'.format(len(val_acc_history)))
     print('Best val Acc: {:4f}'.format(best_acc))
 
     # load best model weights
@@ -319,24 +328,30 @@ def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25,
     torch.save(model.state_dict(), f'../data/models/xception_e{num_epochs}_final')
     return model, val_acc_history
 
+
+def save_model(model, dataset, full, epochs):
+
+    torch.save(model.state_dict(), f'../data/models/xception_{dataset}_e{epochs}_{"finetuning" if full else "feature_extraction"}')
+
 if __name__ == '__main__':
     p = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    p.add_argument('--img_path', '-i', type=str)
+    p.add_argument('--dataset', '-d', type=str, choices=list(DATASETS.keys()))
     p.add_argument('--model_path', '-mi', type=str, default=None)
     p.add_argument('--full', '-l', action='store_true')
     p.add_argument('--epochs', '-e', type=int, default=5)
     p.add_argument('--cuda', action='store_true')
-    p.add_argument('--lr_decay', action='store_true')
-    p.add_argument('--early_stopping', action='store_true')
+    p.add_argument('--lr_decay', type=int, default=0)
+    p.add_argument('--early_stopping', type=int, default=0)
     args = p.parse_args()
 
     logging.basicConfig(filename='../data/experiments.log', format='%(asctime)s %(message)s', level=logging.INFO)
     logging.info('-------------------- Starting new run --------------------')
-    writer = SummaryWriter(os.path.join('../data', 'cnn-runs'))
+    writer = SummaryWriter(os.path.join('../data/cnn-runs', args.dataset, "finetuning" if args.full else "feature_extraction", datetime.datetime.now().strftime("%Y%m%d-%H%M%S")))
     if args.model_path == None:
-        model, dataloaders, criterion, optimizer, device = setup_training(args.img_path, args.model_path, args.full, args.cuda)
-        model, *_ = train_model(model, dataloaders, criterion, optimizer, device, args.epochs, args.early_stopping, args.lr_decay)
+        model, dataloaders, criterion, optimizer, device = setup_training(args.dataset, args.model_path, args.full, args.cuda)
+        model, val_history = train_model(model, dataloaders, criterion, optimizer, device, args.epochs, args.early_stopping, args.lr_decay)
+        save_model(model, args.dataset, args.full, len(val_history))
         test_model(model, dataloaders, device)
     else:
         model, device = load_model(args.model_path, args.cuda, args.full)
