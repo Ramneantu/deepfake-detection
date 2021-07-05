@@ -184,7 +184,7 @@ def test_model(model, dataloaders, device):
     logging.info('Test Acc: {:4f}'.format(test_acc))
 
 def initialize_dataloaders(img_path, full=False):
-    batch_size = 32
+    batch_size = 128
     # batch_size = 32
     # if full:
     #     batch_size = 8
