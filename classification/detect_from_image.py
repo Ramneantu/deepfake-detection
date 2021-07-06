@@ -37,103 +37,11 @@ DATASETS = {
     "Fraunhofer": "../data/celebA_fraunhofer"
 }
 
-# class ImageDataset(torch.utils.data.Dataset):
-#     def __init__(self, root: str, folder: str, klass: int, transform=None, extension: str = "jpg"):
-#         self._data = pathlib.Path(root) / folder
-#         self.klass = klass
-#         self.extension = extension
-#         self.transform = transform
-#         # Only calculate once how many files are in this folder
-#         # Could be passed as argument if you precalculate it somehow
-#         # e.g. ls | wc -l on Linux
-#         self._length = sum(1 for entry in os.listdir(self._data))
-#
-#     def __len__(self):
-#         # No need to recalculate this value every time
-#         return self._length
-#
-#     def __getitem__(self, index):
-#         # images always follow [0, n-1], so you access them directly
-#         img = Image.open(self._data / "{}.{}".format(str(index), self.extension))
-#         if self.transform is not None:
-#             img = self.transform(img)
-#         return img, self.klass
 
-def test_on_images(real_path, fake_path, model_path, cuda = True):
-
-    # Load model
-    model, *_ = model_selection(modelname='xception', num_out_classes=2)
-    if model_path is not None:
-        model = torch.load(model_path)  # , map_location=torch.device('cpu'))
-        print('Model found in {}'.format(model_path))
-    else:
-        print('No model found, initializing random model.')
-    if cuda:
-        model = model.cuda()
-
-    # Face detector
-    face_detector = dlib.get_frontal_face_detector()
-
-    total = 0
-    correct = 0
-    fake_pictures = os.listdir(fake_path)
-    fake_sample = random.sample(fake_pictures, 50)
-    for filename in fake_sample:
-        img = cv2.imread(join(fake_path, filename))
-        # Image size
-        height, width = img.shape[:2]
-
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        faces = face_detector(gray, 1)
-        if len(faces):
-            # For now only take biggest face
-            face = faces[0]
-
-            # --- Prediction ---------------------------------------------------
-            # Face crop with dlib and bounding box scale enlargement
-            x, y, size = get_boundingbox(face, width, height)
-            cropped_face = img[y:y+size, x:x+size]
-
-            # Actual prediction using our model
-            prediction, output = predict_with_model(cropped_face, model,
-                                                    cuda=cuda)
-            # ------------------------------------------------------------------
-            if prediction == 1:
-                correct += 1
-            total += 1
-
-    real_pictures = os.listdir(real_path)
-    real_sample = random.sample(real_pictures, 50)
-    for filename in real_sample:
-        img = cv2.imread(join(real_path, filename))
-        # Image size
-        height, width = img.shape[:2]
-
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        faces = face_detector(gray, 1)
-        if len(faces):
-            # For now only take biggest face
-            face = faces[0]
-
-            # --- Prediction ---------------------------------------------------
-            # Face crop with dlib and bounding box scale enlargement
-            x, y, size = get_boundingbox(face, width, height)
-            cropped_face = img[y:y + size, x:x + size]
-
-            # Actual prediction using our model
-            prediction, output = predict_with_model(cropped_face, model,
-                                                    cuda=cuda)
-            # ------------------------------------------------------------------
-            if prediction == 0:
-                correct += 1
-            total += 1
-
-    print("Accuracy: " + str(correct/total))
-
-def load_model(model_path, cuda = True, full = False):
+def load_model(model_path, full = False):
     # Load model
     model, *_ = model_selection(modelname='xception', num_out_classes=2, dropout=0.5)
-    device = torch.device("cuda:0" if cuda else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if model_path is not None:
         model.load_state_dict(torch.load(model_path, map_location=device))
         for i, param in model.named_parameters():
@@ -148,11 +56,12 @@ def load_model(model_path, cuda = True, full = False):
         else:
             model.set_trainable_up_to(False, None)
             logging.info('Finetuning Xception net model')
-    if cuda:
+    if torch.cuda.is_available():
         model = model.cuda()
         logging.info('Running on GPU')
 
     return model, device
+
 
 def test_model(model, dataloaders, device):
     model.eval()  # Set model to evaluate mode
@@ -183,14 +92,9 @@ def test_model(model, dataloaders, device):
     print('Test Acc: {:4f}'.format(test_acc))
     logging.info('Test Acc: {:4f}'.format(test_acc))
 
-def initialize_dataloaders(img_path, full=False):
-    batch_size = 128
-    # batch_size = 32
-    # if full:
-    #     batch_size = 8
+
+def initialize_dataloaders(img_path, batch_size):
     # Create training and validation datasets
-    # image_datasets = {x: ImageDataset(os.path.join(img_path, x, ), 'real', 0, xception_default_data_transforms[x]) + ImageDataset(os.path.join(img_path, x), 'fake', 1, xception_default_data_transforms[x]) for x in
-    #                   ['train', 'val', 'test']}
     image_datasets = {x: datasets.ImageFolder(os.path.join(img_path, x), xception_default_data_transforms[x]) for x in
                       ['train', 'val', 'test']}
 
@@ -202,11 +106,12 @@ def initialize_dataloaders(img_path, full=False):
 
     return dataloaders_dict
 
-def setup_training(dataset, model_path, full, cuda = True):
 
-    model, device = load_model(model_path, cuda, full)
+def setup_training(dataset, model_path, full, batch_size):
+
+    model, device = load_model(model_path, full)
     img_path = DATASETS[dataset]
-    dataloaders_dict = initialize_dataloaders(img_path, full)
+    dataloaders_dict = initialize_dataloaders(img_path, batch_size)
 
     print("Params to learn:")
     params_to_update = []
@@ -219,6 +124,7 @@ def setup_training(dataset, model_path, full, cuda = True):
     criterion = nn.CrossEntropyLoss()
 
     return model, dataloaders_dict, criterion, optimizer, device
+
 
 def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25, early_stopping=0, lr_decay=0):
     since = time.time()
@@ -333,6 +239,7 @@ def save_model(model, dataset, full, epochs):
 
     torch.save(model.state_dict(), f'../data/models/xception_{dataset}_e{epochs}_{"finetuning" if full else "feature_extraction"}')
 
+
 if __name__ == '__main__':
     p = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -340,16 +247,16 @@ if __name__ == '__main__':
     p.add_argument('--model_path', '-mi', type=str, default=None)
     p.add_argument('--full', '-l', action='store_true')
     p.add_argument('--epochs', '-e', type=int, default=5)
-    p.add_argument('--cuda', action='store_true')
     p.add_argument('--lr_decay', type=int, default=0)
     p.add_argument('--early_stopping', type=int, default=0)
+    p.add_argument('--batch_size', '-bs', type=int, default=8)
     args = p.parse_args()
 
     logging.basicConfig(filename='../data/experiments.log', format='%(asctime)s %(message)s', level=logging.INFO)
     logging.info('-------------------- Starting new run --------------------')
     writer = SummaryWriter(os.path.join('../data/cnn-runs', args.dataset, "finetuning" if args.full else "feature_extraction", datetime.datetime.now().strftime("%Y%m%d-%H%M%S")))
     if args.model_path == None:
-        model, dataloaders, criterion, optimizer, device = setup_training(args.dataset, args.model_path, args.full, args.cuda)
+        model, dataloaders, criterion, optimizer, device = setup_training(args.dataset, args.model_path, args.full, args.batch_size)
         model, val_history = train_model(model, dataloaders, criterion, optimizer, device, args.epochs, args.early_stopping, args.lr_decay)
         save_model(model, args.dataset, args.full, len(val_history))
         test_model(model, dataloaders, device)
