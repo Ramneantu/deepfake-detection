@@ -88,7 +88,7 @@ if __name__ == '__main__':
 
             if args.lime:
                 explanation = explainer.explain_instance(np.array(pill_transf(img)),
-                                                         batch_predict,  # classification function
+                                                         batch_predict,  # xception function
                                                          top_labels=2,
                                                          hide_color=0,
                                                          num_samples=1000,
