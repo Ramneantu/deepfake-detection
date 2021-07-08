@@ -39,6 +39,7 @@ from datetime import datetime
 from PIL import Image as pil_image
 from skimage.segmentation import mark_boundaries
 import matplotlib.pyplot as plt
+import pickle
 
 IMGFILES = (".png", ".jpg", ".jpeg")
 
@@ -69,6 +70,7 @@ def createDatasetFolder(datasetName, modelNameSpecs):
     os.mkdir(os.path.join(dirName, "FalseFake"))
     os.mkdir(os.path.join(dirName, "TrueReal"))
     os.mkdir(os.path.join(dirName, "FalseReal"))
+    os.mkdir(os.path.join(dirName, "Masks"))
 
 def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake):
     """
@@ -102,6 +104,8 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake):
             img_boundary = mark_boundaries(temp / 255.0, mask)
             explainedClass = explanation.top_labels[0]
 
+            _, pos_mask = explanation.get_image_and_mask(explainedClass, positive_only=True, num_features=15)
+
             classifiedAs = ""
 
             if kind_val == explainedClass:
@@ -109,6 +113,8 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake):
             else:
                 classifiedAs = str(kind_val == explainedClass) + ("Real" if kind == "fake" else "Fake")
 
+            with open(os.path.join(datasetName, modelNameSpecs, "Masks", filename.split('.')[0]) + '.pkl', "wb") as f:
+                pickle.dump(pos_mask, f)
             plt.imsave(os.path.join(datasetName, modelNameSpecs, classifiedAs, filename), img_boundary)            
 
 

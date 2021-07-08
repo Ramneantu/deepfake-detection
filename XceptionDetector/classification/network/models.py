@@ -23,7 +23,8 @@ def return_pytorch04_xception(pretrained=True):
         model.fc = model.last_linear
         del model.last_linear
         state_dict = torch.load(
-            '/home/deepfake/emre/repo/proj-4/XceptionDetector/data/models/xception-b5690688.pth')
+            # '/home/deepfake/emre/repo/proj-4/XceptionDetector/data/models/xception-b5690688.pth')
+            './data/models/xception-b5690688.pth')
         for name, weights in state_dict.items():
             if 'pointwise' in name:
                 state_dict[name] = weights.unsqueeze(-1).unsqueeze(-1)
