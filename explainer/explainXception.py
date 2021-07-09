@@ -21,7 +21,6 @@ def model_batch_predict(model):
         batch = torch.stack(tuple(preprocess_transform(i) for i in images), dim=0)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        device = "cpu"
         model.to(device)
         batch = batch.to(device)
 
