@@ -71,6 +71,7 @@ def createDatasetFolder(datasetName, modelNameSpecs):
     os.mkdir(os.path.join(dirName, "TrueReal"))
     os.mkdir(os.path.join(dirName, "FalseReal"))
     os.mkdir(os.path.join(dirName, "Masks"))
+    os.mkdir(os.path.join(dirName, "Explainer"))
 
 def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake):
     """
@@ -102,11 +103,13 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake):
                                                         top_labels=2,
                                                         hide_color=0,
                                                         num_samples=5000,
-                                                        batch_size=32)
+                                                        batch_size=16)
             temp, mask = explanation.get_image_and_mask(0, positive_only=False, num_features=15,
                                                         hide_rest=False)
             img_boundary = mark_boundaries(temp / 255.0, mask)
             explainedClass = explanation.top_labels[0]
+            with open(os.path.join(datasetName, modelNameSpecs, "Explainer", filename.split('.')[0]) + '.pkl', "wb") as f:
+                pickle.dump(explanation, f)
 
             _, pos_mask = explanation.get_image_and_mask(explainedClass, positive_only=True, num_features=15)
 
