@@ -83,6 +83,9 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake):
     logging.info(datasetName + " " + modelNameSpecs)
     rf = ['real', 'fake']
     oneFake = lambda x: 1 if x=="fake" else 0
+    correct = 0
+    incorrect = 0
+    total = 0
     for kind in rf:
         print(kind)
         kind_val = oneFake(kind) if oneIsFake else 1-oneFake(kind)
@@ -93,11 +96,12 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake):
             im = get_image(os.path.join(im_dir, filename))
             print(str(c) + " of " + str(len(im_names)))
             c += 1
+            total += 1
             explanation = explainer.explain_instance(np.array(im),
                                                         batch_predict,
                                                         top_labels=2,
                                                         hide_color=0,
-                                                        num_samples=1500,
+                                                        num_samples=5000,
                                                         batch_size=32)
             temp, mask = explanation.get_image_and_mask(0, positive_only=False, num_features=15,
                                                         hide_rest=False)
@@ -110,12 +114,15 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake):
 
             if kind_val == explainedClass:
                 classifiedAs = str(kind_val == explainedClass) + kind.capitalize()
+                correct += 1
             else:
                 classifiedAs = str(kind_val == explainedClass) + ("Real" if kind == "fake" else "Fake")
+                incorrect += 1
 
             with open(os.path.join(datasetName, modelNameSpecs, "Masks", filename.split('.')[0]) + '.pkl', "wb") as f:
                 pickle.dump(pos_mask, f)
-            plt.imsave(os.path.join(datasetName, modelNameSpecs, classifiedAs, filename), img_boundary)            
+            plt.imsave(os.path.join(datasetName, modelNameSpecs, classifiedAs, filename), img_boundary)
+    logging.info("Accuracy = " + str(correct/total))
 
 
 def explainExistingModels(load_model, model_batch_predict, oneIsFake=False):
