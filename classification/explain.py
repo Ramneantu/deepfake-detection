@@ -26,8 +26,6 @@ from skimage.segmentation import mark_boundaries
 
 from network.models import model_selection
 from dataset.transform import xception_default_data_transforms, get_pil_transform, get_preprocess_transform
-from detect_from_video import predict_with_model, get_boundingbox
-
 
 def batch_predict(images):
     model.eval()
@@ -83,21 +81,21 @@ if __name__ == '__main__':
             p = batch_predict([np.array(pill_transf(img))])
             print(f'{kind} image {c}/{len(os.listdir(dir))} ({os.path.join(dir, filename)})')
             logging.info(f'{kind} {os.path.join(dir, filename)}')
-            logging.info(f'real: {p[0][0] * 100:3.1f}%')
-            logging.info(f'fake: {p[0][1] * 100:3.1f}%\n')
+            logging.info(f'real: {p[0][1] * 100:3.1f}%')
+            logging.info(f'fake: {p[0][0] * 100:3.1f}%\n')
 
             if args.lime:
                 explanation = explainer.explain_instance(np.array(pill_transf(img)),
                                                          batch_predict,  # xception function
                                                          top_labels=2,
                                                          hide_color=0,
-                                                         num_samples=1000,
+                                                         num_samples=1,
                                                          batch_size=32)
                 temp, mask = explanation.get_image_and_mask(0, positive_only=False, num_features=args.features,
                                                             hide_rest=False)
                 img_boundry2 = mark_boundaries(temp / 255.0, mask)
                 text = 'fake-classified'
-                if explanation.top_labels[0] == 0:
+                if explanation.top_labels[0] == 1:
                     text = 'real-classified'
                 plt.imsave(os.path.join(args.img_path, text, filename), img_boundry2)
 
