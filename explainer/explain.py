@@ -82,11 +82,12 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake):
     explainer = lime_image.LimeImageExplainer()
     logging.basicConfig(filename=os.path.join(datasetName, modelNameSpecs, 'explainInfo.log'), format='%(asctime)s %(message)s', level=logging.INFO)
     logging.info(datasetName + " " + modelNameSpecs)
-    rf = ['real', 'fake']
+    rf = ['real','fake']
     oneFake = lambda x: 1 if x=="fake" else 0
     correct = 0
     incorrect = 0
     total = 0
+    fake_ = oneFake("fake") if oneIsFake else 1-oneFake("fake")
     for kind in rf:
         print(kind)
         kind_val = oneFake(kind) if oneIsFake else 1-oneFake(kind)
@@ -99,12 +100,12 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake):
             c += 1
             total += 1
             explanation = explainer.explain_instance(np.array(im),
-                                                        batch_predict,
-                                                        top_labels=2,
-                                                        hide_color=0,
-                                                        num_samples=5000,
-                                                        batch_size=16)
-            temp, mask = explanation.get_image_and_mask(0, positive_only=False, num_features=15,
+                                                     batch_predict,
+                                                     top_labels=2,
+                                                     hide_color=0,
+                                                     num_samples=1,
+                                                     batch_size=16)
+            temp, mask = explanation.get_image_and_mask(fake_, positive_only=False, num_features=15,
                                                         hide_rest=False)
             img_boundary = mark_boundaries(temp / 255.0, mask)
             explainedClass = explanation.top_labels[0]
@@ -114,6 +115,7 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake):
             _, pos_mask = explanation.get_image_and_mask(explainedClass, positive_only=True, num_features=15)
 
             classifiedAs = ""
+            logging.info(filename + ": " + str(pred))
 
             if kind_val == explainedClass:
                 classifiedAs = str(kind_val == explainedClass) + kind.capitalize()
