@@ -25,7 +25,6 @@ from torch.utils.tensorboard import SummaryWriter
 
 from network.models import model_selection
 from dataset.transform import xception_default_data_transforms
-from detect_from_video import predict_with_model, get_boundingbox
 from network.utils import LRScheduler, EarlyStopping
 
 LEARNING = ['finetuning', 'full']
@@ -261,7 +260,8 @@ if __name__ == '__main__':
         save_model(model, args.dataset, args.full, len(val_history))
         test_model(model, dataloaders, device)
     else:
-        model, device = load_model(args.model_path, args.cuda, args.full)
-        dataloaders = initialize_dataloaders(args.img_path)
+        model, device = load_model(args.model_path, args.full)
+        img_path = DATASETS[args.dataset]
+        dataloaders = initialize_dataloaders(img_path, args.batch_size)
         test_model(model, dataloaders, device)
     writer.close()
