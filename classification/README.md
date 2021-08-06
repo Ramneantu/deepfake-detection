@@ -1,24 +1,42 @@
-# Classification
+# CNN Classifier
 
-XceptionNet from our paper trained on our FaceForensics++ dataset. Besides the full image models, all models were trained on slightly enlarged face crops with a scale factor of 1.3.
-The models were trained using the Face2Face face tracker, though the `detect_from_models.py` file uses the freely available dlib face detector.
+The XceptionNet classifier implementation from our project. We trained models on our four datasets: FF++ raw, FF++ compressed, HQ and X-Ray dataset. All the datasets and the pretrained models are available to download under [this link]().
+To train your own models, you will need to create the following folder structure:
 
-Note that we provide the trained models from our paper which have not been fine-tuned for general compressed videos. You can find our used models under [this link](http://kaldir.vc.in.tum.de:/FaceForensics/models/faceforensics++_models.zip).   
+## Run the classifier
 
-Setup:
+**Setup**:
 - Install required modules via `requirement.txt` file
-- Run detection from a single video file or folder with
+- Additionally, install pytorch by `pip3 install torch==1.9.0+cu102 torchvision==0.10.0+cu102 -f https://download.pytorch.org/whl/torch_stable.html`
+- Use one of our datasets or create your own, which adheres to the folder structure of `data/images`, except for the `.gitignore` files. Datasets should be stored in `proj-4/data`
+- Add the ImageNet model as `proj-4/data/models/xception-b5690688.pth`
+- Run the classifier on a dataset
 ```shell
-python detect_from_video.py
--i <path to input video or folder of videos with extenstion '.mp4' or '.avi'>
--m <path to model file, default is imagenet model
--o <path to output folder, will contain output video(s)
-```  
-from the classification folder. Enable cuda with ```--cuda```  or see parameters with ```python detect_from_video.py -h```.
+python classify_xception.py
+-d <dataset: 'FF-raw', 'FF-compressed', 'X-ray', 'HQ'
+-mi (optional) <Path to a model file
+-l (optional) <set to train the whole net (finetuning), not only the last layer (feature extraction)
+-e (optinal) <maximum number of epochs. May stop sooner because of early stopping
+--lr_decay (optional) <number of epochs before reducing learning rate. Default: inf
+--early_stopping (optional) <number of epochs without improvement before stopping
+-bs (optional) <batch size
+```
+**Remarks**:
+- The number of epochs for `lr_decay` and `early_stopping` refers to the epochs without any improvement w.r.t. validation loss.
+- If `-mi` is specified, the network is in test mode and only computes the accuracy on test set. Otherwise, the network is being trained starting from an ImageNet model
+- If a GPU is available, it will be used by the CNN
 
+**Output**:
+- A log of the epochs and the results is stored in `data/experiments.log`
+- For more details on the evolution of the loss use tensorboard to open `data/cnn-runs`
+- The console output visualizes the progress of the training
 
+## Replicate all our experiments
 
-# Requirements
+Populate the `proj-4/data` folder with all the datasets. Run the `proj-4/classification/run_all.sh` script.
 
-- python 3.6
+## Requirements
+
+- python 3.7
+- `pytorch==1.9.0+cu102` with `torchvision==0.10.0+cu102`
 - requirements.txt

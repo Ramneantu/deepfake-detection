@@ -106,10 +106,9 @@ def initialize_dataloaders(img_path, batch_size):
     return dataloaders_dict
 
 
-def setup_training(dataset, model_path, full, batch_size):
+def setup_training(img_path, model_path, full, batch_size):
 
     model, device = load_model(model_path, full)
-    img_path = DATASETS[dataset]
     dataloaders_dict = initialize_dataloaders(img_path, batch_size)
 
     print("Params to learn:")
@@ -220,7 +219,6 @@ def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25,
 
         if training_finished:
             break
-        # torch.save(best_model_wts, f'../data/models/xception_e{epoch + 1}')
 
     time_elapsed = time.time() - since
     print('Training completed in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
@@ -242,7 +240,8 @@ def save_model(model, dataset, full, epochs):
 if __name__ == '__main__':
     p = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    p.add_argument('--dataset', '-d', type=str, choices=list(DATASETS.keys()))
+    p.add_argument('--dataset', '-d', type=str, choices=list(DATASETS.keys()), default=None)
+    p.add_argument('--img_path', '-ip', type=str, default=None)
     p.add_argument('--model_path', '-mi', type=str, default=None)
     p.add_argument('--full', '-l', action='store_true')
     p.add_argument('--epochs', '-e', type=int, default=5)
@@ -253,15 +252,18 @@ if __name__ == '__main__':
 
     logging.basicConfig(filename='../data/experiments.log', format='%(asctime)s %(message)s', level=logging.INFO)
     logging.info('-------------------- Starting new run --------------------')
-    writer = SummaryWriter(os.path.join('../data/cnn-runs', args.dataset, "finetuning" if args.full else "feature_extraction", datetime.datetime.now().strftime("%Y%m%d-%H%M%S")))
+    img_path = DATASETS[args.dataset] if args.dataset is not None else args.img_path
+    dataset = args.dataset if args.dataset is not None else img_path.split('/')[-1]
+    writer = SummaryWriter(os.path.join('../data/cnn-runs', dataset, "finetuning" if args.full else "feature_extraction", datetime.datetime.now().strftime("%Y%m%d-%H%M%S")))
     if args.model_path == None:
-        model, dataloaders, criterion, optimizer, device = setup_training(args.dataset, args.model_path, args.full, args.batch_size)
+        # img_path = DATASETS[args.dataset] if args.dataset is not None else args.img_path
+        model, dataloaders, criterion, optimizer, device = setup_training(img_path, args.model_path, args.full, args.batch_size)
         model, val_history = train_model(model, dataloaders, criterion, optimizer, device, args.epochs, args.early_stopping, args.lr_decay)
-        save_model(model, args.dataset, args.full, len(val_history))
+        save_model(model, dataset, args.full, len(val_history))
         test_model(model, dataloaders, device)
     else:
         model, device = load_model(args.model_path, args.full)
-        img_path = DATASETS[args.dataset]
+        # img_path = DATASETS[args.dataset]
         dataloaders = initialize_dataloaders(img_path, args.batch_size)
         test_model(model, dataloaders, device)
     writer.close()
