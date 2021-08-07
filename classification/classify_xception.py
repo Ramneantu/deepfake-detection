@@ -38,16 +38,17 @@ DATASETS = {
 
 
 def load_model(model_path, full = False):
-    # Load model
     model, *_ = model_selection(modelname='xception', num_out_classes=2, dropout=0.5)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if model_path is not None:
+        # Loads pretrained model
         model.load_state_dict(torch.load(model_path, map_location=device))
         for i, param in model.named_parameters():
             param.requires_grad = False
         print('Model found in {}'.format(model_path))
         logging.info('Model found in {}'.format(model_path))
     else:
+        # Loads ImageNet model and continues training
         print('No model found, initializing random model.')
         if not full:
             model.set_trainable_up_to(False, "last_linear")
@@ -63,27 +64,20 @@ def load_model(model_path, full = False):
 
 
 def test_model(model, dataloaders, device):
-    model.eval()  # Set model to evaluate mode
 
+    model.eval()
     running_corrects = 0
-
     # Iterate over data.
     for inputs, labels in dataloaders['test']:
         inputs = inputs.to(device)
         labels = labels.to(device)
 
-        # forward
-        # track history if only in train
-        with torch.set_grad_enabled(False):
-
-            # Get model outputs and calculate loss
+        with torch.no_grad():
             logits = model(inputs)
             probs = F.softmax(logits, dim=1)
             _, preds = torch.max(probs, 1)
 
-
-        # statistics
-        # changed accumulation vars to free memory
+        # statistic
         running_corrects += float(torch.sum(preds == labels.data))
 
     test_acc = running_corrects / len(dataloaders['test'].dataset)
@@ -93,11 +87,11 @@ def test_model(model, dataloaders, device):
 
 
 def initialize_dataloaders(img_path, batch_size):
-    # Create training and validation datasets
+    # Create training, test and validation datasets
     image_datasets = {x: datasets.ImageFolder(os.path.join(img_path, x), xception_default_data_transforms[x]) for x in
                       ['train', 'val', 'test']}
 
-    # Create training and validation dataloaders
+    # Create dataloaders
     dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, shuffle=True) for x in
                         ['train', 'val', 'test']}
 
@@ -107,7 +101,11 @@ def initialize_dataloaders(img_path, batch_size):
 
 
 def setup_training(img_path, model_path, full, batch_size):
-
+    """
+    Sets up training by initializing model, dataloaders, loss function, optimizer and device
+    @param full: if true, all the weights are updated, not just the weights of the last layer
+    @return: (torch.nn.Module, Dict[str, torch.utils.data.Dataloader], torch.nn.Module, torch.optim.Optimizer, torch.device)
+    """
     model, device = load_model(model_path, full)
     dataloaders_dict = initialize_dataloaders(img_path, batch_size)
 
@@ -126,18 +124,18 @@ def setup_training(img_path, model_path, full, batch_size):
 
 def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25, early_stopping=0, lr_decay=0):
     """
-
+    Training loop for the model. Complete with early stopping and learning rate decay. Returns a trained model
     @param model: TransferModel
         (wrapper for torch.nn.Module)
     @param dataloaders: Dict[str, torch.utils.data.Dataloader]
         dataloader dictionary. Keys are 'train', 'test' and 'val'
     @param criterion: loss function
     @param optimizer: pytorch optimizer to use
-    @param device: device (CPU or GPU) on which the model is stored
+    @param device: torch.device (CPU or GPU) on which the model is stored
     @param num_epochs: maximum number of epochs to run. Training may stop sooner because of early stopping
     @param early_stopping: # epochs without any improvement to the validation loss after which to stop
     @param lr_decay: # epochs without any improvement to the validation loss after which to decrease learning rate
-    @return:
+    @return: (model: torch.nn.Module, val_acc_history: Array) Trained model and the validation accuracy for each epoch
     """
     since = time.time()
 
@@ -153,21 +151,18 @@ def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25,
 
     training_finished = False
     for epoch in tqdm(range(num_epochs), desc=' Epoch', bar_format='{desc:6}:{percentage:3.0f}%|{bar:40}{r_bar}{bar:-30b}', file=sys.stdout, position=0):
-        # print('Epoch {}/{}'.format(epoch, num_epochs - 1))
-        # print('-' * 10)
-
         # Each epoch has a training and validation phase
         for phase in ['train', 'val']:
             if phase == 'train':
-                model.train()  # Set model to training mode
-                # print("Training...")
+                model.train()
             else:
-                model.eval()   # Set model to evaluate mode
-                # print("Validating...")
+                model.eval()
 
+            # Used for epoch accuracy
             running_loss_epoch = 0.0
             running_corrects_epoch = 0
 
+            # Use for Tensorboard log
             running_loss_batch = 0
             running_corrects_batch = 0
             running_count_batch = 0
@@ -198,7 +193,7 @@ def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25,
                         optimizer.step()
 
                 # statistics
-                # changed accumulation vars to free memory
+                # changed accumulation vars to free memory. Gradients are not computed
                 running_loss_epoch += float(loss.item() * inputs.size(0))
                 running_corrects_epoch += float(torch.sum(torch.eq(preds, labels)))
 
@@ -247,7 +242,6 @@ def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25,
 
 
 def save_model(model, dataset, full, epochs):
-
     torch.save(model.state_dict(), f'../data/models/xception_{dataset}_e{epochs}_{"finetuning" if full else "feature_extraction"}')
 
 
