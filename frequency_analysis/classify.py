@@ -4,7 +4,7 @@ from absl.flags import FLAGS
 import pickle
 
 # Choose the number of input images from each dataset, default is set to 1000
-flags.DEFINE_integer('num_files', 10, 'Number of images that will be used form EACH dataset, e.g. if set to 500, '
+flags.DEFINE_integer('num_files', 1000, 'Number of images that will be used form EACH dataset, e.g. if set to 500, '
                                        'there will be 500 fake images and 500 real images used')
 flags.DEFINE_integer('features', 300, 'Number of features used for training')
 # Indicate path to training/test set
