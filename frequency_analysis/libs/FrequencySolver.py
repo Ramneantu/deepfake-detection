@@ -33,7 +33,8 @@ class FrequencySolver:
 
         Other parameter:
         - saved_data: pickle object with trained dataset
-        - data: the azimutahl averages computed for all images
+        - data: the azimutahl averages computed for all images, train set
+        - test_data: same as data, but for the test set
         - mean: mean value of azimuthal average for each feature
         - std: std of azimuthal average for each feature
         where one feature represents one frequency value
@@ -41,7 +42,11 @@ class FrequencySolver:
         self.num_iter = num_iter
         self.features = features
         self.epsilon = epsilon
+        self.classifier = None
+        self.name = None
+        self.type = None
         self.data = {}
+        self.test_data = {}
         self.mean = {}
         self.std = {}
 
@@ -59,6 +64,9 @@ class FrequencySolver:
         self.reals_path = reals_path
         self.fakes_path = fakes_path
         self.training_features = training_features
+
+        # Assuming that reals path is something like .../dataset_name/train/real
+        self.name = reals_path.split('/')[-3]
 
         # sanity checks
         if training_features is None and ((reals_path is None) or (fakes_path is None)):
@@ -93,12 +101,13 @@ class FrequencySolver:
         self.std["reals"] = np.std(reals_data, axis=0)
         self.std["fakes"] = np.std(fakes_data, axis=0)
 
-    def compute_data(self, path, label):
+    def compute_data(self, path, label, type="train"):
         """
         Function that takes as input dataset and returns azimuthal averages of the frequency spectrum of each image as
         well as the corresponding label
         :param path: where images to be processed can be found
         :param label: 0 for fakes, 1 for true
+        :param type: could be train or test
         :return:  data : ndarray of shape num_iter x features, processed data
                   labels:  ndarray of shape num_iter, correct label for each image
         """
@@ -143,7 +152,7 @@ class FrequencySolver:
 
         return data, label
 
-    def train(self, split_dataset: bool = True, test_file: str = 'dataset.pkl', iterations: int = 1):
+    def train(self):
         """
         This is the training function that uses shallow ml classifiers.
         :param split_dataset: If split is True, the function splits one dataset and uses 20% of it for testing. Else, you
@@ -155,57 +164,93 @@ class FrequencySolver:
         Output: (average) accuracy using four different classifiers
         """
         print("Training started!")
-        X = self.data["data"]
-        y = self.data["label"]
+        X_train, y_train = self.data["data"], self.data["label"]
+        svclassifier_r = SVC(C=6.37, kernel='rbf', gamma=0.86)
+        svclassifier_r.fit(X_train, y_train)
 
-        if split_dataset is False:
-            iterations = 1
+        self.type = "svm"
+        self.classifier = svclassifier_r
 
-            X_train = X
-            y_train = y
+        # Saving the model
+        output_name = './data/models/freq_SVM_' + self.name + '.pkl'
+        output = open(output_name, 'wb')
+        pickle.dump(svclassifier_r, output)
+        output.close()
 
+
+        # if split_dataset is False:
+        #     iterations = 1
+        #
+        #     X_train = X
+        #     y_train = y
+        #
+        #     # load pickle object
+        #     pkl_file = open('./data/' + test_file, 'rb')
+        #     loaded_data = pickle.load(pkl_file)
+        #     pkl_file.close()
+        #
+        #     # load data and labels
+        #     X_test = loaded_data["data"]
+        #     y_test = loaded_data["label"]
+        #
+        #
+        #     svclassifier_r = SVC(C=6.37, kernel='rbf', gamma=0.86)
+        #     svclassifier_r.fit(X_train, y_train)
+        #
+        #     SVM_r = svclassifier_r.score(X_test, y_test)
+        #
+        # else:
+        #     SVM_r = 0
+        #     for i in range(iterations):
+        #         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+        #
+        #         svclassifier_r = SVC(C=6.37, kernel='rbf', gamma=0.86, probability=True)
+        #         svclassifier_r.fit(X_train, y_train)
+        #
+        #         SVM_r += svclassifier_r.score(X_test, y_test)
+
+        # print("(Average) SVM_r: " + str(SVM_r / iterations))
+
+
+        # Finally we save the model
+
+
+
+
+    def test(self, test_features=None):
+        """
+        Test on pretrained model, saved in self.classifier
+        :param test_features: If test features are precomputed, give path here
+        :param save_test_features: Name for file to save test features
+        :return: Accuracy
+        """
+        if test_features is not None:
             # load pickle object
-            pkl_file = open('./data/' + test_file, 'rb')
+            pkl_file = open('./data/features/' + test_features, 'rb')
             loaded_data = pickle.load(pkl_file)
             pkl_file.close()
 
             # load data and labels
-            X_test = loaded_data["data"]
-            y_test = loaded_data["label"]
-
-
-            svclassifier_r = SVC(C=6.37, kernel='rbf', gamma=0.86)
-            svclassifier_r.fit(X_train, y_train)
-
-            SVM_r = svclassifier_r.score(X_test, y_test)
-
+            X_test, y_test = loaded_data["data"], loaded_data["label"]
         else:
-            SVM_r = 0
-            for i in range(iterations):
-                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+            print("Processing test images...")
+            reals_path = self.reals_path.replace('train', 'test')
+            fakes_path = self.fakes_path.replace('train', 'test')
+            reals_data, reals_label = self.compute_data(reals_path, label=1)
+            fakes_data, fakes_label = self.compute_data(fakes_path, label=0)
+            X_test = np.concatenate((reals_data, fakes_data), axis=0)
+            y_test = np.concatenate((reals_label, fakes_label), axis=0)
 
-                svclassifier_r = SVC(C=6.37, kernel='rbf', gamma=0.86, probability=True)
-                svclassifier_r.fit(X_train, y_train)
-
-                SVM_r += svclassifier_r.score(X_test, y_test)
-
-        print("(Average) SVM_r: " + str(SVM_r / iterations))
-
-
-        # Finally we save the model
-        self.type = "svm"
-        self.classifier = svclassifier_r
-        output_name = './data/models/frequency_SVM_r.pkl'
-        output = open(output_name, 'wb')
-        pickle.dump(svclassifier_r, output)
-        # pickle.dump(self, output)
-        output.close()
+        self.test_data["data"], self.test_data["label"] = X_test, y_test
+        classifier = self.classifier
+        SVM_r = classifier.score(X_test, y_test)
+        print("SVM_r: " + str(SVM_r))
 
         if FLAGS.save_results:
             f = open('./data/results.txt', 'a+')
-            experiment_number = str(FLAGS.experiment_num)
-            f.write("Results for experiment " + experiment_number + "\n" +
-                    "(Average) SVM_r: " + str(SVM_r / iterations) + '\n' )
+            f.write("Results for experiment " + self.name + "\n" +
+                    "SVM_r: " + str(SVM_r) + '\n' )
+
 
 
     def train_NN(self, with_trainset=False, testset_path=None):

@@ -15,12 +15,14 @@ flags.DEFINE_string('data_path', None, 'Path to dataset for computing input feat
 flags.DEFINE_string('training_features', None, 'Use precomputed training features from '
                                                './data/features/training_features')
 
-flags.DEFINE_string('test_file', 'dataset.pkl',
-                    '.pkl file with saved weights, should be places in ./data')
-# flags.DEFINE_string('test_features', None, 'Use precomputed training features for testing from ./data/features/test_features')
+# flags.DEFINE_string('test_file', 'dataset.pkl',
+#                     '.pkl file with saved weights, should be places in ./data')
+flags.DEFINE_string('test_features', None, 'Use precomputed training features for testing from ./data/features/test_features')
 
-flags.DEFINE_bool('split_dataset', True, 'Set to true if you do not have a separate dataset')
+# flags.DEFINE_bool('split_dataset', True, 'Set to true if you do not have a separate dataset')
 flags.DEFINE_string('save_features', None, 'Give a name for the computed features file, should end in .pkl')
+flags.DEFINE_string('save_test_features', None, 'Give a name for computed test features file, should end in .pkl')
+
 flags.DEFINE_bool('save_results', False, 'Appends results to results.txt and images in img folder')
 
 
@@ -40,7 +42,8 @@ def main(_argv):
         solver_object.save_dataset(file_name=FLAGS.save_features)
         print("Features saved")
 
-    solver_object.train(test_file=FLAGS.test_file, split_dataset=FLAGS.split_dataset)
+    solver_object.train()
+    solver_object.test(test_features=FLAGS.test_features)
     # solver_object.train_NN(testset_path='ff_test_199_crop.pkl')
 
     # saving
@@ -52,7 +55,7 @@ def main(_argv):
     pickle.dump(solver_object, output)
     output.close()
 
-    print("Training finished\n")
+    print("App finished\n")
 
     # solver_object.visualize()
 
