@@ -241,7 +241,7 @@ class FrequencySolver:
             print("Processing test images...")
             reals_path = self.reals_path.replace('train', 'test')
             fakes_path = self.fakes_path.replace('train', 'test')
-            num_files_test =  len([name for name in os.listdir('.') if os.path.isfile(name)])
+            num_files_test=  len([name for name in os.listdir(reals_path)])
             reals_data, reals_label = self.compute_data(reals_path, label=1, num_files=num_files_test)
             fakes_data, fakes_label = self.compute_data(fakes_path, label=0, num_files=num_files_test)
             X_test = np.concatenate((reals_data, fakes_data), axis=0)
