@@ -195,11 +195,11 @@ class FrequencySolver:
         # Finally we save the model
         self.type = "svm"
         self.classifier = svclassifier_r
-        # output_name = './data/models/pretrained_SVM_r.pkl'
-        # output = open(output_name, 'wb')
-        # # pickle.dump(svclassifier_r, output)
+        output_name = './data/models/frequency_SVM_r.pkl'
+        output = open(output_name, 'wb')
+        pickle.dump(svclassifier_r, output)
         # pickle.dump(self, output)
-        # output.close()
+        output.close()
 
         if FLAGS.save_results:
             f = open('./data/results.txt', 'a+')
@@ -286,6 +286,7 @@ class FrequencySolver:
 
         # Test
         trainer.test(test_dataloaders=dataloader_dict['test'])
+        trainer.save_checkpoint("data/models/frequency_NN.ckpt")
 
         self.type = "nn"
         self.classifier_state_dict = model.state_dict()
