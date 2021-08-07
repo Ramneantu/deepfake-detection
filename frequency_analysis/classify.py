@@ -23,6 +23,8 @@ flags.DEFINE_string('test_features', None, 'Use precomputed training features fo
 flags.DEFINE_string('save_features', None, 'Give a name for the computed features file, should end in .pkl')
 flags.DEFINE_string('save_test_features', None, 'Give a name for computed test features file, should end in .pkl')
 
+flags.DEFINE_string('solver', 'svm', 'Give the name of the solver. Change to nn if you want to use the FreqNN')
+
 flags.DEFINE_bool('save_results', False, 'Appends results to results.txt and images in img folder')
 
 
@@ -42,18 +44,21 @@ def main(_argv):
         solver_object.save_dataset(file_name=FLAGS.save_features)
         print("Features saved")
 
-    solver_object.train()
+    if FLAGS.solver == "svm":
+        solver_object.train()
+    elif FLAGS.solver == "nn":
+        solver_object.train_NN()
+
     solver_object.test(test_features=FLAGS.test_features)
-    # solver_object.train_NN(testset_path='ff_test_199_crop.pkl')
 
     # saving
-    if solver_object.type == "nn":
-        output_name = './data/models/frequency_NN.pkl'
-    else:
-        output_name = './data/models/frequency_SVM_r.pkl'
-    output = open(output_name, 'wb')
-    pickle.dump(solver_object, output)
-    output.close()
+    # if solver_object.type == "nn":
+    #     output_name = './data/models/frequency_NN_obj.pkl'
+    # else:
+    #     output_name = './data/models/frequency_SVM_r_obj.pkl'
+    # output = open(output_name, 'wb')
+    # pickle.dump(solver_object, output)
+    # output.close()
 
     print("App finished\n")
 

@@ -183,43 +183,88 @@ class FrequencySolver:
         print("Training finished\n")
 
 
-        # if split_dataset is False:
-        #     iterations = 1
-        #
-        #     X_train = X
-        #     y_train = y
-        #
-        #     # load pickle object
-        #     pkl_file = open('./data/' + test_file, 'rb')
-        #     loaded_data = pickle.load(pkl_file)
-        #     pkl_file.close()
-        #
-        #     # load data and labels
-        #     X_test = loaded_data["data"]
-        #     y_test = loaded_data["label"]
-        #
-        #
-        #     svclassifier_r = SVC(C=6.37, kernel='rbf', gamma=0.86)
-        #     svclassifier_r.fit(X_train, y_train)
-        #
-        #     SVM_r = svclassifier_r.score(X_test, y_test)
-        #
-        # else:
-        #     SVM_r = 0
-        #     for i in range(iterations):
-        #         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-        #
-        #         svclassifier_r = SVC(C=6.37, kernel='rbf', gamma=0.86, probability=True)
-        #         svclassifier_r.fit(X_train, y_train)
-        #
-        #         SVM_r += svclassifier_r.score(X_test, y_test)
+    def train_NN(self, with_trainset=False, testset_path=None):
+        # Precomputed data is saved in self.data
+        X = self.data["data"].astype(np.float32)
+        y = self.data["label"].astype(np.longlong)
 
-        # print("(Average) SVM_r: " + str(SVM_r / iterations))
+        # Set working device
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # print("Device used: {}".format(device))
 
+        # Define training, validation (and test) datasets
+        phases = ['train', 'val']
+        train_dataset, val_dataset = commons.dataset_split(X, y, 0.8)
 
-        # Finally we save the model
+        # pkl_file = open('./data/' + testset_path, 'rb')
+        # testset = pickle.load(pkl_file)
+        # pkl_file.close()
 
+        # test_dataset = FreqDataset(testset["data"].astype(np.float32), testset["label"].astype(np.longlong))
 
+        dataset_dict = {
+            'train': train_dataset,
+            'val': val_dataset,
+            # 'test': test_dataset
+        }
+
+        # Define some hyperparameters
+        h_params = {
+            "lr": 0.0001,
+            "weight_decay": 0.00000001,
+            "batch_size": 256
+        }
+
+        # We used this for debugging, we don't need it anymore
+        # freq_logger = TensorBoardLogger(save_dir="lightning_logs")
+
+        early_stop_callback = EarlyStopping(
+            monitor='val_loss',
+            patience=20
+        )
+
+        def weights_init(m):
+            classname = m.__class__.__name__
+            if classname.find('Linear') != -1:
+                torch.nn.init.kaiming_uniform_(m.weight)
+
+        # Define model
+        model = DeepFreq(h_params=h_params)
+
+        model.apply(weights_init)
+
+        # Again, we used this for logging
+        # from torch.utils.tensorboard import SummaryWriter
+        # writer = SummaryWriter('runs/freq_net')
+        # writer.add_graph(model.to(device="cuda"), torch.Tensor(X[0]).cuda())
+        # writer.close()
+
+        # summary(model.cuda(), (1,1400))
+        # Dataloader
+        dataloader_dict = {
+            x: torch.utils.data.DataLoader(dataset_dict[x], batch_size=h_params['batch_size'], shuffle=True) if x ==
+            'train' else
+            torch.utils.data.DataLoader(dataset_dict[x], batch_size=h_params['batch_size'], shuffle=False)
+            for x in phases}
+
+        # Trainer
+        trainer = pl.Trainer(
+            max_epochs=300,
+            gpus=1 if str(device) == 'cuda' else None,
+            callbacks=[early_stop_callback],
+            # logger=freq_logger,
+        )
+
+        # Train
+        trainer.fit(model, dataloader_dict['train'], dataloader_dict['val'])
+
+        # Test
+        # trainer.test(test_dataloaders=dataloader_dict['test'])
+        trainer.save_checkpoint("data/models/freq_NN"+ self.name + ".ckpt")
+
+        self.type = "nn"
+        self.classifier = trainer
+        self.dataloader_dict = dataloader_dict
 
 
     def test(self, test_features=None):
@@ -241,7 +286,8 @@ class FrequencySolver:
             print("Processing test images...")
             reals_path = self.reals_path.replace('train', 'test')
             fakes_path = self.fakes_path.replace('train', 'test')
-            num_files_test=  len([name for name in os.listdir(reals_path)])
+            # num_files_test=  len([name for name in os.listdir(reals_path)])
+            num_files_test = 10
             reals_data, reals_label = self.compute_data(reals_path, label=1, num_files=num_files_test)
             fakes_data, fakes_label = self.compute_data(fakes_path, label=0, num_files=num_files_test)
             X_test = np.concatenate((reals_data, fakes_data), axis=0)
@@ -249,106 +295,20 @@ class FrequencySolver:
 
         self.test_data["data"], self.test_data["label"] = X_test, y_test
         classifier = self.classifier
-        SVM_r = classifier.score(X_test, y_test)
-        print("SVM_r: " + str(SVM_r))
+        if self.type == "nn":
+            dataset = FreqDataset(X_test.astype(np.float32), y_test.astype(np.longlong))
+            dataloader = torch.utils.data.DataLoader(dataset, batch_size=128, shuffle=False)
+            score  = classifier.test(test_dataloaders=dataloader)
+            print("NN: " + str(score))
+        else:
+            score = classifier.score(X_test, y_test)
+            print("SVM_r: " + str(score))
 
         if FLAGS.save_results:
             f = open('./data/results.txt', 'a+')
-            f.write("Results for experiment " + self.name + "\n" +
-                    "SVM_r: " + str(SVM_r) + '\n' )
+            f.write("Results for experiment " + " " + self.type + " " + self.name + "\n" +
+                    "score: " + str(score) + '\n' )
 
-
-
-    def train_NN(self, with_trainset=False, testset_path=None):
-        # Precomputed data is saved in self.data
-        X = self.data["data"].astype(np.float32)
-        y = self.data["label"].astype(np.longlong)
-
-        # Set working device
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        # print("Device used: {}".format(device))
-
-        # Define training, validation (and test) datasets
-        phases = ['train', 'val', 'test']
-        if with_trainset is True:
-            train_dataset, val_dataset, test_dataset = commons.dataset_split(X, y, 0.8, with_testset=True)
-        else:
-            train_dataset, val_dataset, _ = commons.dataset_split(X, y, 0.8)
-
-            pkl_file = open('./data/' + testset_path, 'rb')
-            testset = pickle.load(pkl_file)
-            pkl_file.close()
-
-            test_dataset = FreqDataset(testset["data"].astype(np.float32), testset["label"].astype(np.longlong))
-
-        dataset_dict = {
-            'train': train_dataset,
-            'val': val_dataset,
-            'test': test_dataset
-        }
-
-        # Define some hyperparameters
-        h_params = {
-            "lr": 0.0001,
-            "weight_decay": 0.00000001,
-            "batch_size": 256
-        }
-
-        freq_logger = TensorBoardLogger(save_dir="lightning_logs")
-
-        early_stop_callback = EarlyStopping(
-            monitor='val_loss',
-            patience=20
-        )
-
-        def weights_init(m):
-            classname = m.__class__.__name__
-            if classname.find('Linear') != -1:
-                torch.nn.init.kaiming_uniform_(m.weight)
-
-        # Define model
-        model = DeepFreq(h_params=h_params)
-
-        model.apply(weights_init)
-
-        from torch.utils.tensorboard import SummaryWriter
-        writer = SummaryWriter('runs/freq_net')
-        writer.add_graph(model.to(device="cuda"), torch.Tensor(X[0]).cuda())
-        writer.close()
-
-        # summary(model.cuda(), (1,1400))
-        # Dataloader
-        dataloader_dict = {
-            x: torch.utils.data.DataLoader(dataset_dict[x], batch_size=h_params['batch_size'], shuffle=True) if x ==
-            'train' else
-            torch.utils.data.DataLoader(dataset_dict[x], batch_size=h_params['batch_size'], shuffle=False)
-            for x in phases}
-
-        # Trainer
-        trainer = pl.Trainer(
-            max_epochs=300,
-            gpus=1 if str(device) == 'cuda' else None,
-            callbacks=[early_stop_callback],
-            logger=freq_logger,
-        )
-
-        # Train
-        trainer.fit(model, dataloader_dict['train'], dataloader_dict['val'])
-
-        # Test
-        trainer.test(test_dataloaders=dataloader_dict['test'])
-        trainer.save_checkpoint("data/models/frequency_NN.ckpt")
-
-        self.type = "nn"
-        self.classifier_state_dict = model.state_dict()
-        self.parameters_in = model.parameters_in
-        self.parameters_out = model.parameters_out
-        self.h_params = model.h_params
-        self.n_hidden = model.n_hidden
-        # output_name = './data/models/pretrained_NN.pkl'
-        # output = open(output_name, 'wb')
-        # pickle.dump(self, output)
-        # output.close()
 
     def visualize(self):
         """
