@@ -19,11 +19,12 @@ import torch
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+import os
 
 
 class FrequencySolver:
     def __init__(
-            self, num_iter: int = 500, features: int = 300, epsilon: float = 1e-8
+            self, features: int = 300, epsilon: float = 1e-8
     ):
         """
         Object used for data preprocessing and training
@@ -39,7 +40,6 @@ class FrequencySolver:
         - std: std of azimuthal average for each feature
         where one feature represents one frequency value
         """
-        self.num_iter = num_iter
         self.features = features
         self.epsilon = epsilon
         self.classifier = None
@@ -66,7 +66,10 @@ class FrequencySolver:
         self.training_features = training_features
 
         # Assuming that reals path is something like .../dataset_name/train/real
-        self.name = reals_path.split('/')[-3]
+        if reals_path is not None:
+            self.name = reals_path.split('/')[-3]
+        else:
+            self.name = training_features.split('.')[0]
 
         # sanity checks
         if training_features is None and ((reals_path is None) or (fakes_path is None)):
@@ -76,8 +79,8 @@ class FrequencySolver:
         if training_features is None:
             # fake data has label 0 and real data has label 1
             print("Processing images...")
-            reals_data, reals_label = self.compute_data(reals_path, label=1)
-            fakes_data, fakes_label = self.compute_data(fakes_path, label=0)
+            reals_data, reals_label = self.compute_data(reals_path, label=1, num_files=FLAGS.num_files)
+            fakes_data, fakes_label = self.compute_data(fakes_path, label=0, num_files=FLAGS.num_files)
             self.data["data"] = np.concatenate((reals_data, fakes_data), axis=0)
             self.data["label"] = np.concatenate((reals_label, fakes_label), axis=0)
         else:
@@ -101,24 +104,24 @@ class FrequencySolver:
         self.std["reals"] = np.std(reals_data, axis=0)
         self.std["fakes"] = np.std(fakes_data, axis=0)
 
-    def compute_data(self, path, label, type="train"):
+    def compute_data(self, path, label, num_files):
         """
         Function that takes as input dataset and returns azimuthal averages of the frequency spectrum of each image as
         well as the corresponding label
         :param path: where images to be processed can be found
         :param label: 0 for fakes, 1 for true
         :param type: could be train or test
-        :return:  data : ndarray of shape num_iter x features, processed data
-                  labels:  ndarray of shape num_iter, correct label for each image
+        :return:  data : ndarray of shape num_files x features, processed data
+                  labels:  ndarray of shape num_files, correct label for each image
         """
         print("Started processing dataset at location {}".format(path))
-        print("Processed 0/{} images".format(self.num_iter))
+        print("Processed 0/{} images".format(num_files))
         if label == 1:
-            label = np.ones([self.num_iter])
+            label = np.ones([num_files])
         else:
-            label = np.zeros([self.num_iter])
+            label = np.zeros([num_files])
 
-        data = np.zeros(([self.num_iter, 300]))
+        data = np.zeros(([num_files, 300]))
         file_num = 0
 
         for filename in glob.glob(path + "/*"):
@@ -142,13 +145,13 @@ class FrequencySolver:
             data[file_num, :] = interpolated
             file_num += 1
 
-            if file_num == self.num_iter:
-                print("Processed {}/{} images".format(file_num, self.num_iter))
+            if file_num == num_files:
+                print("Processed {}/{} images".format(file_num, num_files))
                 print("Finished processing dataset\n")
                 break
 
             if file_num % 50 == 0:
-                print("Processed {}/{} images".format(file_num, self.num_iter))
+                print("Processed {}/{} images".format(file_num, num_files))
 
         return data, label
 
@@ -176,6 +179,7 @@ class FrequencySolver:
         output = open(output_name, 'wb')
         pickle.dump(svclassifier_r, output)
         output.close()
+        print("Training finished\n")
 
 
         # if split_dataset is False:
@@ -236,8 +240,9 @@ class FrequencySolver:
             print("Processing test images...")
             reals_path = self.reals_path.replace('train', 'test')
             fakes_path = self.fakes_path.replace('train', 'test')
-            reals_data, reals_label = self.compute_data(reals_path, label=1)
-            fakes_data, fakes_label = self.compute_data(fakes_path, label=0)
+            num_files_test =  len([name for name in os.listdir('.') if os.path.isfile(name)])
+            reals_data, reals_label = self.compute_data(reals_path, label=1, num_files=num_files_test)
+            fakes_data, fakes_label = self.compute_data(fakes_path, label=0, num_files=num_files_test)
             X_test = np.concatenate((reals_data, fakes_data), axis=0)
             y_test = np.concatenate((reals_label, fakes_label), axis=0)
 

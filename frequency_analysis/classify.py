@@ -4,7 +4,7 @@ from absl.flags import FLAGS
 import pickle
 
 # Choose the number of input images from each dataset, default is set to 1000
-flags.DEFINE_integer('num_iter', 1000, 'Number of images that will be used form EACH dataset, e.g. if set to 500, '
+flags.DEFINE_integer('num_files', 10, 'Number of images that will be used form EACH dataset, e.g. if set to 500, '
                                        'there will be 500 fake images and 500 real images used')
 flags.DEFINE_integer('features', 300, 'Number of features used for training')
 # Indicate path to training/test set
@@ -29,10 +29,10 @@ flags.DEFINE_bool('save_results', False, 'Appends results to results.txt and ima
 def main(_argv):
     print("App started...")
 
-    solver_object = FrequencySolver(num_iter=FLAGS.num_iter, features=FLAGS.features)
+    solver_object = FrequencySolver(features=FLAGS.features)
 
     reals_path, fakes_path = (
-    FLAGS.data_path + '/real', FLAGS.data_path + '/fakes') if FLAGS.training_features is None else (None, None)
+    FLAGS.data_path + '/train/real', FLAGS.data_path + '/train/fake') if FLAGS.training_features is None else (None, None)
 
     solver_object(reals_path=reals_path, fakes_path=fakes_path,
                   training_features=FLAGS.training_features)
