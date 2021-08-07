@@ -8,14 +8,11 @@ from .freq_nn import DeepFreq
 import glob
 from matplotlib import pyplot as plt
 import pickle
-from PIL import Image as pil_image
-import os
 
 from sklearn.svm import SVC
-from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 
-from absl import app, flags, logging
+from absl import logging
 from absl.flags import FLAGS
 
 import torch
@@ -66,10 +63,6 @@ class FrequencySolver:
         # sanity checks
         if training_features is None and ((reals_path is None) or (fakes_path is None)):
             raise Exception('No data path given')
-
-        # test commit
-        def test_fun(self, number):
-            pass
 
         # compute data or load data
         if training_features is None:
@@ -331,11 +324,9 @@ class FrequencySolver:
         plt.show()
 
     def save_dataset(self, file_name: str = 'dataset'):
-        if file_name == 'dataset':
-            logging.warning('No specific name given to save inputs')
-        output_name = './data/' + file_name
+        output_name = './data/features/' + file_name
         output = open(output_name, 'wb')
         pickle.dump(self.data, output)
         output.close()
 
-        logging.info("Data saved in {}".format(output_name))
+        print("Data saved in {}".format(output_name))

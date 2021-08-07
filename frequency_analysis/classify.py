@@ -17,10 +17,10 @@ flags.DEFINE_string('training_features', None, 'Use precomputed training feature
 
 flags.DEFINE_string('test_file', 'dataset.pkl',
                     '.pkl file with saved weights, should be places in ./data')
+# flags.DEFINE_string('test_features', None, 'Use precomputed training features for testing from ./data/features/test_features')
+
 flags.DEFINE_bool('split_dataset', True, 'Set to true if you do not have a separate dataset')
-flags.DEFINE_integer('experiment_num', 1, 'If you run multiple experiments, keep track of experiment number')
-flags.DEFINE_bool('save_dataset', False, 'Set to true if you wish to save the computed frequency averages')
-flags.DEFINE_string('saved_file_name', 'dataset', 'Name for saving the dataset, used if save_dataset is true')
+flags.DEFINE_string('save_features', None, 'Give a name for the computed features file, should end in .pkl')
 flags.DEFINE_bool('save_results', False, 'Appends results to results.txt and images in img folder')
 
 
@@ -36,9 +36,9 @@ def main(_argv):
                   training_features=FLAGS.training_features)
     print("Initialization finished\n")
 
-    if FLAGS.save_dataset:
-        solver_object.save_dataset(file_name=FLAGS.saved_file_name)
-        print("Weights saved")
+    if FLAGS.save_features is not None:
+        solver_object.save_dataset(file_name=FLAGS.save_features)
+        print("Features saved")
 
     solver_object.train(test_file=FLAGS.test_file, split_dataset=FLAGS.split_dataset)
     # solver_object.train_NN(testset_path='ff_test_199_crop.pkl')
@@ -52,7 +52,7 @@ def main(_argv):
     pickle.dump(solver_object, output)
     output.close()
 
-    print("Training finished")
+    print("Training finished\n")
 
     # solver_object.visualize()
 
