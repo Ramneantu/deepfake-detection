@@ -51,6 +51,11 @@ def main(_argv):
 
     solver_object.test(test_features=FLAGS.test_features)
 
+    if FLAGS.save_test_features is not None:
+        solver_object.save_dataset(file_name=FLAGS.save_test_features, type="test")
+
+    print("App finished\n")
+
     # saving
     # if solver_object.type == "nn":
     #     output_name = './data/models/frequency_NN_obj.pkl'
@@ -59,8 +64,6 @@ def main(_argv):
     # output = open(output_name, 'wb')
     # pickle.dump(solver_object, output)
     # output.close()
-
-    print("App finished\n")
 
     # solver_object.visualize()
 

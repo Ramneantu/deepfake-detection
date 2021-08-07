@@ -220,7 +220,7 @@ class FrequencySolver:
 
         early_stop_callback = EarlyStopping(
             monitor='val_loss',
-            patience=20
+            patience=30
         )
 
         def weights_init(m):
@@ -260,7 +260,7 @@ class FrequencySolver:
 
         # Test
         # trainer.test(test_dataloaders=dataloader_dict['test'])
-        trainer.save_checkpoint("data/models/freq_NN"+ self.name + ".ckpt")
+        trainer.save_checkpoint("data/models/freq_NN_"+ self.name + ".ckpt")
 
         self.type = "nn"
         self.classifier = trainer
@@ -335,10 +335,13 @@ class FrequencySolver:
 
         plt.show()
 
-    def save_dataset(self, file_name: str = 'dataset'):
+    def save_dataset(self, file_name: str = 'dataset', type="train"):
         output_name = './data/features/' + file_name
         output = open(output_name, 'wb')
-        pickle.dump(self.data, output)
+        if type == 'train':
+            pickle.dump(self.data, output)
+        elif type == 'test':
+            pickle.dump(self.test_data, output)
         output.close()
 
         print("Data saved in {}".format(output_name))
