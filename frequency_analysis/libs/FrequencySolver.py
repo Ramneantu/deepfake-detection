@@ -170,6 +170,7 @@ class FrequencySolver:
         X_train, y_train = self.data["data"], self.data["label"]
         svclassifier_r = SVC(C=6.37, kernel='rbf', gamma=0.86)
         svclassifier_r.fit(X_train, y_train)
+        svclassifier_r.parameters_in = self.features
 
         self.type = "svm"
         self.classifier = svclassifier_r
