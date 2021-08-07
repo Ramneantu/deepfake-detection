@@ -19,9 +19,6 @@ from absl import app, flags, logging
 from absl.flags import FLAGS
 
 import torch
-from torch.nn import functional as F
-from torch import nn
-from torchsummary import summary
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
@@ -51,8 +48,8 @@ class FrequencySolver:
         self.mean = {}
         self.std = {}
 
-    def __call__(self, compute_data: bool = True, reals_path=None, fakes_path=None,
-                 saved_data: str = None, crop: bool = True, **kwargs):
+    def __call__(self, reals_path=None, fakes_path=None,
+                 training_features: str = None, **kwargs):
         """"
         If data is precomputed and save, load it
         If data is new, use paths to load it and process it
@@ -62,29 +59,26 @@ class FrequencySolver:
         :param saved_data: pickle file with saved data
         :param crop: set to true if while processing you wish to crop the face area
         """
-        self.compute_data_flag = compute_data
         self.reals_path = reals_path
         self.fakes_path = fakes_path
-        self.saved_data = saved_data
-        self.crop = crop
+        self.training_features = training_features
 
         # sanity checks
-        if compute_data is True and ((reals_path is None) or (fakes_path is None)):
+        if training_features is None and ((reals_path is None) or (fakes_path is None)):
             raise Exception('No data path given')
 
-        if compute_data is False and saved_data is None:
-            raise Exception('No saved data is given')
-
         # compute data or load data
-        if compute_data is True:
+        if training_features is None:
             # fake data has label 0 and real data has label 1
-            reals_data, reals_label = self.compute_data(reals_path, label=1, crop=crop)
-            fakes_data, fakes_label = self.compute_data(fakes_path, label=0, crop=crop)
+            print("Processing images...")
+            reals_data, reals_label = self.compute_data(reals_path, label=1)
+            fakes_data, fakes_label = self.compute_data(fakes_path, label=0)
             self.data["data"] = np.concatenate((reals_data, fakes_data), axis=0)
             self.data["label"] = np.concatenate((reals_label, fakes_label), axis=0)
         else:
             # if features have been precomputed, load them
-            pkl_file = open('./data/features/' + saved_data, 'rb')
+            print("Loading features...")
+            pkl_file = open('./data/features/' + training_features, 'rb')
             loaded_data = pickle.load(pkl_file)
             pkl_file.close()
             # load data and labels
@@ -102,13 +96,12 @@ class FrequencySolver:
         self.std["reals"] = np.std(reals_data, axis=0)
         self.std["fakes"] = np.std(fakes_data, axis=0)
 
-    def compute_data(self, path, label, crop: bool = True):
+    def compute_data(self, path, label):
         """
         Function that takes as input dataset and returns azimuthal averages of the frequency spectrum of each image as
         well as the corresponding label
         :param path: where images to be processed can be found
         :param label: 0 for fakes, 1 for true
-        :param crop: true if you wish to crop face area
         :return:  data : ndarray of shape num_iter x features, processed data
                   labels:  ndarray of shape num_iter, correct label for each image
         """
@@ -119,26 +112,23 @@ class FrequencySolver:
         else:
             label = np.zeros([self.num_iter])
 
-        # data = np.zeros([self.num_iter, self.features])
         data = np.zeros(([self.num_iter, 300]))
         file_num = 0
 
         for filename in glob.glob(path + "/*"):
             img = cv2.imread(filename, 0)
 
-            if crop:
-                h = img.shape[0] // 3
-                w = img.shape[1] // 3
-                img = img[h:-h, w:-w]
-            images = [img]
-            no_splits = 1
-            # TODO: schimba parametrii in for loop si in method call
-            for split in range(1, no_splits):
-                blocks = commons.split_image(img, 3 * split)
-                images = images + blocks
+            h = img.shape[0] // 3
+            w = img.shape[1] // 3
+            images = [img[h:-h, w:-w]]
+
+            # We don't do the blocks split anymore since it's not better then just cropping
+            # no_splits = 1
+            # for split in range(1, no_splits):
+            #     blocks = commons.split_image(img, 3 * split)
+            #     images = images + blocks
 
             frequencies = [commons.get_frequencies(img, self.epsilon) for img in images]
-            # psd1D = commons.get_frequencies(img, self.epsilon)
             interpolated_array = [commons.interpolate_features(psd1D, self.features, cnt) for (psd1D, cnt) in
                                   zip(frequencies, range(10))]
             interpolated = np.hstack(interpolated_array)
@@ -186,56 +176,26 @@ class FrequencySolver:
             X_test = loaded_data["data"]
             y_test = loaded_data["label"]
 
-            # svclassifier = SVC(kernel='linear')
-            # svclassifier.fit(X_train, y_train)
 
             svclassifier_r = SVC(C=6.37, kernel='rbf', gamma=0.86)
             svclassifier_r.fit(X_train, y_train)
 
-            # svclassifier_p = SVC(kernel='poly')
-            # svclassifier_p.fit(X_train, y_train)
-            #
-            # logreg = LogisticRegression(solver='liblinear', max_iter=1000)
-            # logreg.fit(X_train, y_train)
-
-            # SVM = svclassifier.score(X_test, y_test)
             SVM_r = svclassifier_r.score(X_test, y_test)
-            # SVM_p = svclassifier_p.score(X_test, y_test)
-            # LR = logreg.score(X_test, y_test)
 
         else:
-            # LR = 0
-            # SVM = 0
             SVM_r = 0
-            # SVM_p = 0
-
             for i in range(iterations):
                 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-
-                # svclassifier = SVC(kernel='linear')
-                # svclassifier.fit(X_train, y_train)
 
                 svclassifier_r = SVC(C=6.37, kernel='rbf', gamma=0.86, probability=True)
                 svclassifier_r.fit(X_train, y_train)
 
-                # svclassifier_p = SVC(kernel='poly')
-                # svclassifier_p.fit(X_train, y_train)
-                #
-                # logreg = LogisticRegression(solver='liblinear', max_iter=1000)
-                # logreg.fit(X_train, y_train)
-                #
-                # SVM += svclassifier.score(X_test, y_test)
                 SVM_r += svclassifier_r.score(X_test, y_test)
-                # SVM_p += svclassifier_p.score(X_test, y_test)
-                # LR += logreg.score(X_test, y_test)
 
-        # print("(Average) SVM: " + str(SVM / iterations))
         print("(Average) SVM_r: " + str(SVM_r / iterations))
-        # print("(Average) SVM_p: " + str(SVM_p / iterations))
-        # print("(Average) LR: " + str(LR / iterations))
+
 
         # Finally we save the model
-        # TODO: make a flag for this!
         self.type = "svm"
         self.classifier = svclassifier_r
         # output_name = './data/models/pretrained_SVM_r.pkl'
@@ -248,10 +208,8 @@ class FrequencySolver:
             f = open('./data/results.txt', 'a+')
             experiment_number = str(FLAGS.experiment_num)
             f.write("Results for experiment " + experiment_number + "\n" +
-                    # "(Average) SVM: " + str(SVM / iterations) + '\n' +
                     "(Average) SVM_r: " + str(SVM_r / iterations) + '\n' )
-                    # + "(Average) SVM_p: " + str(SVM_p / iterations) + '\n' +
-                    # "(Average) LR: " + str(LR / iterations) + '\n\n')
+
 
     def train_NN(self, with_trainset=False, testset_path=None):
         # Precomputed data is saved in self.data
