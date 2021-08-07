@@ -84,7 +84,7 @@ class FrequencySolver:
             self.data["label"] = np.concatenate((reals_label, fakes_label), axis=0)
         else:
             # if features have been precomputed, load them
-            pkl_file = open('./data/' + saved_data, 'rb')
+            pkl_file = open('./data/features/' + saved_data, 'rb')
             loaded_data = pickle.load(pkl_file)
             pkl_file.close()
             # load data and labels
