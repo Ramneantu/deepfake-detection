@@ -48,9 +48,9 @@ def main(_argv):
 
     # saving
     if solver_object.type == "nn":
-        output_name = './data/models/pretrained_NN.pkl'
+        output_name = './data/models/frequency_NN.pkl'
     else:
-        output_name = './data/models/pretrained_SVM_r.pkl'
+        output_name = './data/models/frequency_SVM_r.pkl'
     output = open(output_name, 'wb')
     pickle.dump(solver_object, output)
     output.close()
