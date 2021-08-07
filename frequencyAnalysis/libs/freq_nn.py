@@ -12,20 +12,22 @@ class DeepFreq(pl.LightningModule):
         self.parameters_out = parameters_out
         self.n_hidden = n_hidden
         self.h_params = h_params
+        self.save_hyperparameters("parameters_in")
+        self.save_hyperparameters("parameters_out")
+        self.save_hyperparameters("n_hidden")
+        self.save_hyperparameters("h_params")
 
         # Layers of model
         # self.scaling_layer = ScalingLayer(parameters_in)
         # self.scaling_layer.cuda()
         self.FC = nn.Sequential(
-            nn.Linear(in_features=parameters_in, out_features=700),
+            nn.Linear(in_features=parameters_in, out_features=100),
             nn.PReLU(),
-            nn.Linear(in_features=700, out_features=250),
+            nn.Linear(in_features=100, out_features=40),
             nn.PReLU(),
-            nn.Linear(in_features=250, out_features=80),
+            nn.Linear(in_features=40, out_features=10),
             nn.PReLU(),
-            nn.Linear(in_features=80, out_features=20),
-            nn.PReLU(),
-            nn.Linear(in_features=20, out_features=2),
+            nn.Linear(in_features=10, out_features=2),
             nn.PReLU(),
             # nn.Softmax(dim=1)
         )

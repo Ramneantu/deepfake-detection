@@ -31,15 +31,25 @@ import pickle
 # from detect_from_video import predict_with_model, get_boundingbox
 
 def load_model(model_path: str=None):
-    pkl_file = open(model_path, 'rb')
-    model = pickle.load(pkl_file)
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    if model.type == "nn":
-        model.classifier = DeepFreq(model.h_params, model.parameters_in, model.parameters_out, model.n_hidden)
-        model.classifier.load_state_dict(model.classifier_state_dict)
-        model.classifier.to(device)
-        model.classifier.eval()
-    pkl_file.close()
+    extension = model_path.split('.')[-1]
+    global classifier_type
+    if extension == 'ckpt':
+        model = DeepFreq.load_from_checkpoint(model_path)
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        model.to(device)
+        model.eval()
+        classifier_type = 'nn'
+    else:
+        pkl_file = open(model_path, 'rb')
+        model = pickle.load(pkl_file)
+        classifier_type = 'svm'
+    # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # if model.type == "nn":
+    #     model.classifier = DeepFreq(model.h_params, model.parameters_in, model.parameters_out, model.n_hidden)
+    #     model.classifier.load_state_dict(model.classifier_state_dict)
+    #     model.classifier.to(device)
+    #     model.classifier.eval()
+    # pkl_file.close()
     return model
 
 
@@ -48,15 +58,23 @@ def model_batch_predict(model):
         # first, call the preprocessing functions
         # for this: check compute_data in FrequencySolver
 
-        features = np.stack(tuple(get_feature_vector(np.delete(i, [1, 2], 2).squeeze(2), model.crop, model.features, model.epsilon) for i in images), axis=0)
-        if model.type == "svm":
-            probs = model.classifier.predict_proba(features)
-        if model.type == "nn":
+        features = np.stack(tuple(get_feature_vector(np.delete(i, [1, 2], 2).squeeze(2), model.parameters_in) for i in images), axis=0)
+        if classifier_type == "svm":
+            probs = model.predict_proba(features)
+        if classifier_type == "nn":
             device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
             with torch.no_grad():
-                logits = model.classifier.forward(torch.from_numpy(features.astype(np.float32)).to(device))
+                logits = model.forward(torch.from_numpy(features.astype(np.float32)).to(device))
                 probs_gpu = F.softmax(logits, dim=1)
                 probs = probs_gpu.detach().cpu().numpy()
+        # if model.type == "svm":
+        #     probs = model.classifier.predict_proba(features)
+        # if model.type == "nn":
+        #     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        #     with torch.no_grad():
+        #         logits = model.classifier.forward(torch.from_numpy(features.astype(np.float32)).to(device))
+        #         probs_gpu = F.softmax(logits, dim=1)
+        #         probs = probs_gpu.detach().cpu().numpy()
 
         return probs
     return batch_predict

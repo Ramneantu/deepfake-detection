@@ -103,7 +103,7 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake):
                                                      batch_predict,
                                                      top_labels=2,
                                                      hide_color=0,
-                                                     num_samples=1,
+                                                     num_samples=10,
                                                      batch_size=16)
             temp, mask = explanation.get_image_and_mask(fake_, positive_only=False, num_features=15,
                                                         hide_rest=False)
@@ -115,7 +115,7 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake):
             _, pos_mask = explanation.get_image_and_mask(explainedClass, positive_only=True, num_features=15)
 
             classifiedAs = ""
-            logging.info(filename + ": " + str(pred))
+            # logging.info(filename + ": " + str(pred))
 
             if kind_val == explainedClass:
                 classifiedAs = str(kind_val == explainedClass) + kind.capitalize()

@@ -155,11 +155,11 @@ def interpolate_features(psd1D: np.ndarray = None, no_features: int = 300, conto
 
     return interpolated
 
-def get_feature_vector(img: np.ndarray, crop, features, epsilon: float):
-    if crop:
-        h = img.shape[0] // 3
-        w = img.shape[1] // 3
-        img = img[h:-h, w:-w]
+def get_feature_vector(img: np.ndarray, features):
+    epsilon = 1e-8
+    h = img.shape[0] // 3
+    w = img.shape[1] // 3
+    img = img[h:-h, w:-w]
     images = [img]
     no_splits = 1
     # TODO: schimba parametrii in for loop si in method call
