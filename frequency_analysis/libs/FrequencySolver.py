@@ -67,6 +67,10 @@ class FrequencySolver:
         if training_features is None and ((reals_path is None) or (fakes_path is None)):
             raise Exception('No data path given')
 
+        # test commit
+        def test_fun(self, number):
+            pass
+
         # compute data or load data
         if training_features is None:
             # fake data has label 0 and real data has label 1
