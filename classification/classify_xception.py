@@ -125,6 +125,20 @@ def setup_training(img_path, model_path, full, batch_size):
 
 
 def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25, early_stopping=0, lr_decay=0):
+    """
+
+    @param model: TransferModel
+        (wrapper for torch.nn.Module)
+    @param dataloaders: Dict[str, torch.utils.data.Dataloader]
+        dataloader dictionary. Keys are 'train', 'test' and 'val'
+    @param criterion: loss function
+    @param optimizer: pytorch optimizer to use
+    @param device: device (CPU or GPU) on which the model is stored
+    @param num_epochs: maximum number of epochs to run. Training may stop sooner because of early stopping
+    @param early_stopping: # epochs without any improvement to the validation loss after which to stop
+    @param lr_decay: # epochs without any improvement to the validation loss after which to decrease learning rate
+    @return:
+    """
     since = time.time()
 
     val_acc_history = []

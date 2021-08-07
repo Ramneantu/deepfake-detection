@@ -97,7 +97,7 @@ if __name__ == '__main__':
     p = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    p.add_argument('--data_path', type=str)
+    p.add_argument('--data_path', type=str, help='')
     p.add_argument('--dataset', '-d', type=str,
                    choices=list(DATASET_PATHS.keys()) + ['all'],
                    default='all')

@@ -14,7 +14,7 @@ To train your own models, you will need to create the following folder structure
 ```shell
 python classify_xception.py
 -d <dataset: 'FF-raw', 'FF-compressed', 'X-ray', 'HQ'
--mi (optional) <Path to a model file
+-mi (optional) <path to a model file
 -l (optional) <set to train the whole net (finetuning), not only the last layer (feature extraction)
 -e (optinal) <maximum number of epochs. May stop sooner because of early stopping
 --lr_decay (optional) <number of epochs before reducing learning rate. Default: inf
