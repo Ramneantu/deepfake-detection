@@ -8,21 +8,17 @@ It supports computing the input features from the images, training two classifie
 ## 1. Theoretical Background
 This is a short introduction. For more details, we refer to [Frequency Jupyter Notebook]() explaining all the steps sequentially. 
 
-###To get the input features:
+### To get the input features:
 - Crop face area of the image
 - Apply the 2D Fourier Transform on the input image. Result will be again two dimensional.
 - Compute the magnitude/power in the Fourier domain
 - Compute the azimuthal average to get a **one dimensional** input vector 
 
-<figure>
-<img align="center" src="./rm_img/azm_avg.png" width="1000"/>
-<figcaption>Fig. 1: Computing the azimuthal average. Source: Durall et al</figcaption>
-</figure>
 
 After this, you can train the SVM/NN with the input features vector. 
 - svm uses a radial kernel
 - nn is a simple model with 4 fully-connected layers
-##2. Project structure
+## 2. Project structure
 
 The framework contains:
 - `classiy.py`, script for computing features and training
@@ -36,7 +32,7 @@ Datasets:
 - for training, each dataset should have two subfolders `train` and `test`
 - both `train` and `test` should be divided in `real` and `fake` 
 
-##3. Running the experiments 
+## 3. Running the experiments 
 
 To run `classify.py`, the following flags are available:
 ```shell
@@ -60,7 +56,7 @@ Output:
 - a pretrained model in ./data/model, a .pkl file for svm and a .ckpt file for nn
 - is save flags are set, features/results are saved accordingly 
 
-##4. Training and Testing
+## 4. Training and Testing
 
 Here are a few examples of using the framework. We assume that we are running from the terminal. 
 
@@ -96,7 +92,7 @@ precomputed test features of the same dataset are `xray_test.pkl```
 All of the five example will output a trained model. Note that for really big datasets (c0, c23) the svm might take a while to train. 
 
 
-##5. Example: Training on X-ray dataset 
+## 5. Example: Training on X-ray dataset 
 
 First, we want to train from the scratch using the svm and save the computed features. 
 
