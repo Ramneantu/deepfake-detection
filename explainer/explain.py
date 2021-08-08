@@ -1,28 +1,75 @@
 """
-DataSetName (Explain_DATA_DFALGO)
+This pipeline will run the Lime Explainer for all models and datasets we have.
+
+We simply need to have a dataset in the form:
+DataSetName
 |-- real
 |-- fake
-|- Model1_Type_TrainData1_DFAlgo1
-|-- T_Real
-|-- F_Real
-|-- T_Fake
-|-- F_Fake
-|- Model2_Type_TrainData2_DFAlgo2
-|-- T_Real
-|-- F_Real
-|-- T_Fake
-|-- F_Fake
-|- Model1_Type_TrainData2_DFAlgo1
-|-- T_Real
-|-- F_Real
-|-- T_Fake
-|-- F_Fake
-...
-
-where: Type: featureExtraction+linear, Full, FineTuning, etc.
 
 real and fake dirs must exist before and should contain images
 that we want to explain
+
+After running the lime explainer on the to be explained datasets,
+the folder structure will change as follows:
+
+DataSetName
+|-- real
+|-- fake
+|- Model1_Type_TrainData1_DFAlgo1
+|-- True_Real
+|-- False_Real
+|-- True_Fake
+|-- False_Fake
+|- Model2_Type_TrainData2_DFAlgo2
+|-- True_Real
+|-- False_Real
+|-- True_Fake
+|-- False_Fake
+|- Model1_Type_TrainData2_DFAlgo1
+|-- True_Real
+|-- False_Real
+|-- True_Fake
+|-- False_Fake
+...
+where: Type: featureExtraction+linear, Full, FineTuning, etc.
+
+The dirs:
+|-- True_Real
+|-- False_Real
+|-- True_Fake
+|-- False_Fake
+contain images explained by lime
+
+
+Example: let's say we have 2 models: Xception_trained_on_c0 and FreqNet_trained_on_c0
+we Have 2 to be explained datasets: c0
+
+The structure needed before running:
+
+c0_explain
+|-- real
+|-- fake
+
+c23_explain
+|-- real
+|-- fake
+
+After running this script for matching training and explaining datasets:
+
+c0_explain
+|-- real
+|-- fake
+|- Xception_trained_on_c0
+|-- True_Real
+|-- False_Real
+|-- True_Fake
+|-- False_Fake
+|- FreqNet_trained_on_c0
+|-- True_Real
+|-- False_Real
+|-- True_Fake
+|-- False_Fake
+
 """
 
 import copy
@@ -77,7 +124,11 @@ def createDatasetFolder(datasetName, modelNameSpecs):
 
 def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake, transform):
     """
-    batch_predict: needs to handle preprocessing and resizing
+    dataSetName:    String      Path to Explain_DATA_DFALGO
+    modelNameSpecs: String      Model1_Type_TrainData_DFAlgo
+    batch_predict:  function    predict function for batches (will be used by explainer)
+    oneIsFake:      boolean     if label 1 corresponds to fake (or otherwise)
+    transform:      function    transform image before explanation (e.g. resize)
 
     """
     a = createDatasetFolder(datasetName, modelNameSpecs)
@@ -146,13 +197,18 @@ def explainExistingModels(load_model, model_batch_predict, oneIsFake=False, tran
     """
     p = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    # notused
     p.add_argument('--all_models_path', '-amp', type=str, default=None)
     p.add_argument('--model_path', '-mp', type=str, default=None)
+
+    # used
     p.add_argument('--explain_data_path', '-ed', type=str, default=None)
     p.add_argument('--all_explain_data_path', '-aed', type=str, default=None)
 
     args = p.parse_args()
 
+    # not used.
+    # explain all model and explain_data pairs
     if args.all_models_path is not None:
         for m in os.listdir(args.all_models_path):
             model = load_model(os.path.join(args.all_models_path, m))
