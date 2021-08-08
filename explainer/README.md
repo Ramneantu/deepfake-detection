@@ -30,4 +30,4 @@ python explainXception.py -mp <ModelPath> -ed <ExplainDataPath>
 or
 python explainFreq.py -mp <ModelPath> -ed <ExplainDataPath>
 ```
-
+where -ed = explain_data_path and -mp = model_path
