@@ -7,6 +7,11 @@
 
 
 **Face-Xray approach:**
+
+Ref:
+- https://github.com/AlgoHunt/Face-Xray
+- https://github.com/neverUseThisName/Face-X-Ray
+
 Given: images of faces, in best case same image sizes and somehow centered
 
 Goal: Given two images, select face region from first one, do some transformations to the select face mask and paste it to second image
@@ -29,6 +34,8 @@ The more complex paper also experiments with different Mask formation algorithms
 See Notebooks for reference
 
 **Face-Artifacts approach:**
+
+Ref: https://github.com/yuezunli/CVPRW2019_Face_Artifacts
 
 Similar transformation and mask generation etc.
 
