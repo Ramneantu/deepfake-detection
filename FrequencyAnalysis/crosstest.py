@@ -1,31 +1,14 @@
-from FrequencyAnalysis.libs.FrequencySolver import FrequencySolver
-from FrequencyAnalysis.libs.commons import get_feature_vector
-from FrequencyAnalysis.libs.FreqDataset import FreqDataset
-from absl import app, flags, logging
-from absl.flags import FLAGS
-from FrequencyAnalysis.libs.freq_nn_xray import DeepFreq
-import Explainer.explain as exp
-
-import argparse
-import os
-import cv2
-
-import torch
-import random
-import torch.nn as nn
-import torch.nn.functional as F
-from PIL import Image as pil_image
-from tqdm import tqdm
-import math
-import numpy as np
-import pathlib
 import logging
-import matplotlib.pyplot as plt
-from PIL import Image
-from lime import lime_image
-from skimage.segmentation import mark_boundaries
-
+import os
+import torch
+import numpy as np
 import pickle
+
+from libs.FrequencySolver import FrequencySolver
+from libs.commons import get_feature_vector
+from libs.FreqDataset import FreqDataset
+from libs.freq_nn import DeepFreq
+
 
 """
 This script will run the cross-testing procedure for the frequency classifiers.
@@ -57,8 +40,8 @@ freq_svm_trained_on_c0, c0_test: 0.5
 
 """
 
-model_path = "/home/deepfake/emre/repo/proj-4/Models/reruns-2"
-data_path = "/home/deepfake/emre/repo/proj-4/cross-testing/saved_features"
+model_path = "../data/models-cross"
+data_path = "../data/features-cross"
 
 def load_model(model_path: str=None):
     """
@@ -82,8 +65,8 @@ def load_model(model_path: str=None):
 
 
 def main():
-    # create log file (if not existent) in same directory as script
-    logging.basicConfig(filename='./experiments.log', format='%(asctime)s %(message)s', level=logging.INFO)
+    # create log file (if not existent) in ../data
+    logging.basicConfig(filename='../data/experiments.log', format='%(asctime)s %(message)s', level=logging.INFO)
     logging.info('-------------------- Run Cross Tests --------------------')
 
     for m in os.listdir(model_path):
