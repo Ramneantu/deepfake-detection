@@ -27,27 +27,62 @@ from skimage.segmentation import mark_boundaries
 
 import pickle
 
-# from network.models import model_selection
-# from dataset.transform import xception_default_data_transforms, get_pil_transform, get_preprocess_transform
-# from detect_from_video import predict_with_model, get_boundingbox
+"""
+This script will run the cross-testing procedure for the frequency classifiers.
+
+The starting points are two directories:
+- model: We need files of pretrained models in a directory (model_path)
+- data: We need different datasets for cross-testing (data_path)
+
+the data here will be precomputed feature vectors stored in pickle files.
+See frequency_analysis directory for more information.
+
+------------
+Example:
+model_dir
+|-- freq_nn_trained_on_HQ
+|-- freq_svm_trained_on_c0
+
+data_dir
+|-- Xray_test
+|-- c0_test
+
+
+Output: logging file with entries for accuracies as:
+freq_nn_trained_on_HQ, Xray_test: 0.63
+freq_nn_trained_on_HQ, c0_test: 0.51
+freq_svm_trained_on_c0, Xray_test: 0.6
+freq_svm_trained_on_c0, c0_test: 0.5
+------------
+
+"""
+
+model_path = "/home/deepfake/emre/repo/proj-4/Models/reruns-2"
+data_path = "/home/deepfake/emre/repo/proj-4/cross-testing/saved_features"
 
 def load_model(model_path: str=None):
-    pkl_file = open(model_path, 'rb')
-    model = pickle.load(pkl_file)
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    device = "cpu"
-    if model.type == "nn":
-        model.classifier = DeepFreq(model.h_params, model.parameters_in, model.parameters_out, model.n_hidden)
-        model.classifier.load_state_dict(model.classifier_state_dict)
-        model.classifier.to(device)
-        model.classifier.eval()
-    pkl_file.close()
+    """
+    Load model given model_path
+
+    Discern between the NN and SVM model before loading
+    """
+    extension = model_path.split('.')[-1]
+    global classifier_type
+    if extension == 'ckpt':
+        model = DeepFreq.load_from_checkpoint(model_path)
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        model.to(device)
+        model.eval()
+        classifier_type = 'nn'
+    else:
+        pkl_file = open(model_path, 'rb')
+        model = pickle.load(pkl_file)
+        classifier_type = 'svm'
     return model
 
 
 def main():
-    model_path = "/home/deepfake/emre/repo/proj-4/Models/reruns-2"
-    data_path = "/home/deepfake/emre/repo/proj-4/cross-testing/saved_features"
+    # create log file (if not existent) in same directory as script
     logging.basicConfig(filename='./experiments.log', format='%(asctime)s %(message)s', level=logging.INFO)
     logging.info('-------------------- Run Cross Tests --------------------')
 
@@ -58,8 +93,12 @@ def main():
             pkl_file = open(os.path.join(data_path, d), 'rb')
             data = pickle.load(pkl_file)
             pkl_file.close()
-            if model.type == "svm":
-                acc = model.classifier.score(data["data"],data["label"])
+            # we have two frequency models.
+            # Depending whether SVM or NN, treat differently
+            # in both cases, we want to determine the accuracy given the
+            # model and the test dataset
+            if classifier_type == "svm":
+                acc = model.score(data["data"],data["label"])
                 logging.info("Model: " + m + ", Data: " + d + ": " + str(acc))
             else:
                 testdata = FreqDataset(data["data"].astype(np.float32), data["label"].astype(np.longlong))
@@ -68,11 +107,11 @@ def main():
                 correct = 0
                 total = 0
                 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-                device = "cpu"
+                # device = "cpu"
                 with torch.no_grad():
                     for dat in testloader:
                         images, labels = dat
-                        outputs = model.classifier.forward(images.to(device))
+                        outputs = model.forward(images.to(device))
 
                         _, predicted = torch.max(outputs.data, 1)
                         total += labels.size(0)
@@ -81,3 +120,7 @@ def main():
                             print("processed: " + str(total))
 
                 logging.info("Model: " + m + ", Data: " + d + ": " + str(correct / total))
+
+
+if __name__ == '__main__':
+    main()

@@ -191,42 +191,31 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake, transform):
 
 def explainExistingModels(load_model, model_batch_predict, oneIsFake=False, transform=None):
     """
-    all_models_path: directory of a specific architecture that may have different model/weight files
-                e.g.: XceptionModels --> XceptionTrainedOnFF30k_full.pickle, XceptionTrainedOnCelebA_finetuning.pickle, ...
-    explaing_data_path: 
+    load_model      function        given a model, it needs to be initialized.
+                                    This function is passed here
+                                    For Xception, it would be the function to init
+                                    the NN weights
+    model_batch_predict function    predictor function given a model
+    oneIsFake:      boolean     if label 1 corresponds to fake (or otherwise)
+    transform:      function    transform image before explanation (e.g. resize)
+                    
     """
     p = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    # notused
-    p.add_argument('--all_models_path', '-amp', type=str, default=None)
+
+    # tell where to look for the model
     p.add_argument('--model_path', '-mp', type=str, default=None)
 
-    # used
+    # specify which data needs to be explained
     p.add_argument('--explain_data_path', '-ed', type=str, default=None)
-    p.add_argument('--all_explain_data_path', '-aed', type=str, default=None)
 
     args = p.parse_args()
 
     # not used.
     # explain all model and explain_data pairs
-    if args.all_models_path is not None:
-        for m in os.listdir(args.all_models_path):
-            model = load_model(os.path.join(args.all_models_path, m))
-            modelName = os.path.basename(m).split(".")[0]
-            if args.all_explain_data_path is not None:
-                for data in os.listdir(args.all_explain_data_path):
-                    explain(os.path.join(args.all_explain_data_path, data), 
-                            modelName,
-                            model_batch_predict(model),
-                            oneIsFake,
-                            transform)
-            else:
-                explain(args.explain_data_path, 
-                        modelName,
-                        model_batch_predict(model),
-                        oneIsFake,
-                        transform)
-
+    if args.model_path is None or args.explain_data_path is None:
+        print("please provide sensible paths by using -ed and -mp."
+        + " See Read Me file for more information")
 
     else:
         # take explain data from given data path
