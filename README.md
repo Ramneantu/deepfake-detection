@@ -15,7 +15,7 @@ This is a short introduction. For more details, we refer to [Frequency Jupyter N
 - Compute the azimuthal average to get a **one dimensional** input vector 
 
 <figure>
-<img align="center" src="img/azm_avg.png" width="1000"/>
+<img align="center" src="rm_img/azm_avg.png" width="1000"/>
 <figcaption>Fig. 1: Computing the azimuthal average. Source: Durall et al</figcaption>
 </figure>
 
