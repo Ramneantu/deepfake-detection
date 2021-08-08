@@ -221,16 +221,8 @@ def explainExistingModels(load_model, model_batch_predict, oneIsFake=False, tran
         # take explain data from given data path
         model = load_model(args.model_path)
         modelName = os.path.basename(args.model_path).split(".")[0]
-        if args.all_explain_data_path is not None:
-            for data in os.listdir(args.all_explain_data_path):
-                explain(os.path.join(args.explain_data_path, data), 
-                        modelName,
-                        model_batch_predict(model),
-                        oneIsFake,
-                        transform)
-        else:
-            explain(args.explain_data_path, 
-                    modelName,
-                    model_batch_predict(model),
-                    oneIsFake,
-                    transform)
+        explain(args.explain_data_path,
+                modelName,
+                model_batch_predict(model),
+                oneIsFake,
+                transform)

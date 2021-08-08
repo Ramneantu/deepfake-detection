@@ -1,10 +1,10 @@
-from frequencyAnalysis.libs.FrequencySolver import FrequencySolver
-from frequencyAnalysis.libs.commons import get_feature_vector
-from frequencyAnalysis.libs.FreqDataset import FreqDataset
+from FrequencyAnalysis.libs.FrequencySolver import FrequencySolver
+from FrequencyAnalysis.libs.commons import get_feature_vector
+from FrequencyAnalysis.libs.FreqDataset import FreqDataset
 from absl import app, flags, logging
 from absl.flags import FLAGS
-from frequencyAnalysis.libs.freq_nn_xray import DeepFreq
-import explainer.explain as exp
+from FrequencyAnalysis.libs.freq_nn_xray import DeepFreq
+import Explainer.explain as exp
 
 import argparse
 import os

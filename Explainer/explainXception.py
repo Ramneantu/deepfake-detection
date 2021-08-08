@@ -1,14 +1,15 @@
 import sys
 import os
-import argparse
-import explainer.explain as exp
+import explain as exp
 import torch
-
-import torch.nn as nn
 import torch.nn.functional as F
 
-from XceptionDetector.classification.network.models import model_selection
-from XceptionDetector.classification.dataset.transform import xception_default_data_transforms, get_pil_transform, get_preprocess_transform
+PACKAGE_PARENT = '..'
+SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
+sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
+
+from XceptionNet.network.models import model_selection
+from XceptionNet.dataset.transform import xception_default_data_transforms, get_pil_transform, get_preprocess_transform
 
 MODEL_PATH = ""
 EXPLAIN_DATA_PATH = ""

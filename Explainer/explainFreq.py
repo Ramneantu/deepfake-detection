@@ -1,30 +1,18 @@
-from frequencyAnalysis.libs.FrequencySolver import FrequencySolver
-from frequencyAnalysis.libs.commons import get_feature_vector
-from absl import app, flags, logging
-from absl.flags import FLAGS
-from frequencyAnalysis.libs.freq_nn import DeepFreq
-import explainer.explain as exp
-
-import argparse
 import os
-import cv2
-
+import sys
 import torch
-import random
-import torch.nn as nn
 import torch.nn.functional as F
-from PIL import Image as pil_image
-from tqdm import tqdm
-import math
 import numpy as np
-import pathlib
-import logging
-import matplotlib.pyplot as plt
-from PIL import Image
-from lime import lime_image
-from skimage.segmentation import mark_boundaries
-
 import pickle
+
+PACKAGE_PARENT = '..'
+SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
+sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
+
+import explain as exp
+from FrequencyAnalysis.libs.freq_nn import DeepFreq
+from FrequencyAnalysis.libs.FrequencySolver import FrequencySolver
+from FrequencyAnalysis.libs.commons import get_feature_vector
 
 def load_model(model_path: str=None):
     """

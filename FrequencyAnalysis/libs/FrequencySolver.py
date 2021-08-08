@@ -81,7 +81,7 @@ class FrequencySolver:
         else:
             # if features have been precomputed, load them
             print("Loading features...")
-            pkl_file = open('./data/features/' + training_features, 'rb')
+            pkl_file = open('../data/features/' + training_features, 'rb')
             loaded_data = pickle.load(pkl_file)
             pkl_file.close()
             # load data and labels
@@ -171,7 +171,7 @@ class FrequencySolver:
         self.classifier = svclassifier_r
 
         # Saving the model
-        output_name = './data/models/freq_SVM_' + self.name + '.pkl'
+        output_name = '../data/models/freq_SVM_' + self.name + '.pkl'
         output = open(output_name, 'wb')
         pickle.dump(svclassifier_r, output)
         output.close()
@@ -191,7 +191,7 @@ class FrequencySolver:
         phases = ['train', 'val']
         train_dataset, val_dataset = commons.dataset_split(X, y, 0.8)
 
-        # pkl_file = open('./data/' + testset_path, 'rb')
+        # pkl_file = open('../data/' + testset_path, 'rb')
         # testset = pickle.load(pkl_file)
         # pkl_file.close()
 
@@ -255,7 +255,7 @@ class FrequencySolver:
 
         # Test
         # trainer.test(test_dataloaders=dataloader_dict['test'])
-        trainer.save_checkpoint("data/models/freq_NN_"+ self.name + ".ckpt")
+        trainer.save_checkpoint("../data/models/freq_NN_"+ self.name + ".ckpt")
 
         self.type = "nn"
         self.classifier = trainer
@@ -271,7 +271,7 @@ class FrequencySolver:
         """
         if test_features is not None:
             # load pickle object
-            pkl_file = open('./data/features/' + test_features, 'rb')
+            pkl_file = open('../data/features/' + test_features, 'rb')
             loaded_data = pickle.load(pkl_file)
             pkl_file.close()
 
@@ -300,7 +300,7 @@ class FrequencySolver:
             print("SVM_r: " + str(score))
 
         if FLAGS.save_results:
-            f = open('./data/results.txt', 'a+')
+            f = open('../data/results.txt', 'a+')
             f.write("Results for experiment " + " " + self.type + " " + self.name + "\n" +
                     "score: " + str(score) + '\n' )
 
@@ -331,7 +331,7 @@ class FrequencySolver:
         plt.show()
 
     def save_dataset(self, file_name: str = 'dataset', type="train"):
-        output_name = './data/features/' + file_name
+        output_name = '../data/features/' + file_name
         output = open(output_name, 'wb')
         if type == 'train':
             pickle.dump(self.data, output)

@@ -3,8 +3,9 @@ https://github.com/ondyari/FaceForensics
 """
 import torch
 import torch.nn as nn
-from network.xception import xception
 import torchvision
+
+from .xception import xception
 
 
 def return_pytorch04_xception(pretrained=True):

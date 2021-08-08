@@ -1,12 +1,12 @@
 **/.DS_Store
 .idea
-frequency_analysis/data*
-frequency_analysis/img*
-frequency_analysis/lightning_logs
+FrequencyAnalysis/data*
+FrequencyAnalysis/img*
+FrequencyAnalysis/lightning_logs
 lightning_logs
 *.pyc
 .vscode
-frequency_analysis/runs/*
-frequency_analysis/models
+FrequencyAnalysis/runs/*
+FrequencyAnalysis/models
 **/nohup.out
 nohup.out
