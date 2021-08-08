@@ -92,6 +92,18 @@ All of the five example will output a trained model. Note that for really big da
 Attention! There is one case that is not working: the case when you already have precomputed training features 
 `--training_set <pkl_file>` but want to compute new test features is not working. We never came across this particular case. 
 
+**6. Cross-testing** 
+To perform crosstesting as visualized as follows
+
+![Crosstesting](crosstest.png)
+
+we created a script **crosstest.py** that handles this. One solely needs a directory that contains the test data frequency features as pickle files, and a directory that contains the different frequency models (trained on different training data).
+
+These two paths can be specified at the top of the file:
+model_path = "xyz"
+data_path = "abc"
+
+
 ## 5. Example: Training on X-ray dataset 
 
 First, we want to train from the scratch using the svm and save the computed features. 
