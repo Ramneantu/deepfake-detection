@@ -1,17 +1,9 @@
 """
-
-Author: Andreas Rössler
+https://github.com/ondyari/FaceForensics
 """
-import os
-import argparse
-
-
 import torch
-import pretrainedmodels
 import torch.nn as nn
-import torch.nn.functional as F
 from network.xception import xception
-import math
 import torchvision
 
 

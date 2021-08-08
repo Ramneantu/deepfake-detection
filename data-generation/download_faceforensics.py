@@ -1,7 +1,9 @@
 #!/usr/bin/env python
-""" Downloads FaceForensics++ and Deep Fake Detection public data release
+"""
+Downloads FaceForensics++ and Deep Fake Detection public data release
 Example usage:
-    see -h or https://github.com/ondyari/FaceForensics
+    see -h
+Source: https://github.com/ondyari/FaceForensics
 """
 # -*- coding: utf-8 -*-
 import argparse

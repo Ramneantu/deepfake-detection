@@ -1,6 +1,6 @@
 """
 Trains an XceptionNet to classify deepfakes from real images.
-Based on the FaceForensics++ implementation: https://github.com/ondyari/FaceForensics
+Adapted from FaceForensics++ implementation: https://github.com/ondyari/FaceForensics
 """
 
 import copy

@@ -1,6 +1,6 @@
 """
 Extracts images from (compressed) videos, used for the FaceForensics++ dataset
-Based on https://github.com/ondyari/FaceForensics
+Adapted from the FaceForensics++ implementation: https://github.com/ondyari/FaceForensics
 """
 import os
 from os.path import join
