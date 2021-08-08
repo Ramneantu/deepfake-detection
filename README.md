@@ -3,7 +3,7 @@
 1. X-Ray Data Generator: contains all requirements for creating fake data with image processing steps. See description below for more info
 2. XraySimpleDemo: contains simple Xray creation pipeline and demo notebook
 3. XrayDemo: contains Demo of actual processing steps that are used in our final generation pipeline
-4. Backup: contains another approach for image processing and data generation. The approach in there uses face warping instead of looking for similar faces in a database. This was for prototyping and experimenting only - not used in the end.
+4. Backup: contains Face-Artifacts approach for image processing and data generation. The approach in there uses face warping instead of looking for similar faces in a database. This was for prototyping and experimenting only - not used in the end.
 
 
 **Face-Xray approach:**
