@@ -6,7 +6,8 @@
 # Copyright (c) 2019
 
 #!/usr/bin/env python3
-""" Masks functions for faceswap.py """
+""" Masks functions for faceswap.py 
+See Jupyter Notebook: in XrayDemo for visualization"""
 
 import inspect
 import logging
