@@ -60,7 +60,7 @@ Output:
 - a pretrained model in ./data/model, a .pkl file for svm and a .ckpt file for nn
 - is save flags are set, features/results are saved accordingly 
 
-##4. Examples
+##4. Training and Testing
 
 Here are a few examples of using the framework. We assume that we are running from the terminal. 
 
@@ -85,6 +85,34 @@ from `<path_to_dataset>/test`
 
 4. Train from scratch and save test features
 `python3 -m classify --num_files 3000 --data_path <path_to_dataset> --save_test_features svm_test.pkl`
+
+5. Train using precomputed train and test features 
+- assume the precomputed train features of the dataset X-ray are `xray_train.pkl` and the 
+precomputed test features of the same dataset are `xray_test.pkl```
+
+`pythron3 -m classify --training_features xray_train.pkl --test_features xray_test.pkl`
+
+
+All of the five example will output a trained model. Note that for really big datasets (c0, c23) the svm might take a while to train. 
+
+
+##5. Example: Training on X-ray dataset 
+
+First, we want to train from the scratch using the svm and save the computed features. 
+
+`python3 -m classify --num_files 7000 --data_path <path_to_xray_dataset> --save_features xray_train_ex.pkl --save_test_features xray_test_ex.pkl`
+
+- We will use 7000 reals and 7000 deepfakes for training and the entire test set (this is default and it can't be changed)
+- We'll save the training features in `./data/features/xray_train_ex.pkl`
+- We'll save the test features in `./data/features/xray_test_ex.pkl`
+- The pretrained model `freq_SVM_XRray-dataset.pkl` will be saved in `./data/models`
+
+Next, we want to train the Freq NN on the same dataset. To save time, we can use the precomputed input features saved as pickle object.
+
+`python3 -m classify --training_features  xray_train_ex.pkl --test_features xray_test_ex.pkl --solver nn`
+
+This allows great flexibility in training under different conditions. 
+
 
 
 
