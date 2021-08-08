@@ -1,7 +1,6 @@
 from libs.FrequencySolver import FrequencySolver
-from absl import app, flags, logging
+from absl import app, flags
 from absl.flags import FLAGS
-import pickle
 
 # Choose the number of input images from each dataset, default is set to 1000
 flags.DEFINE_integer('num_files', 1000, 'Number of images that will be used form EACH dataset, e.g. if set to 500, '

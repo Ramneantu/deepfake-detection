@@ -1,5 +1,5 @@
 # Frequency Solver
-In this project we are doing DeepFake detection using the frequency spectrum as input. 
+DeepFake detection using the frequency spectrum as input. 
 This is inspired and based on the work of Durall *et al.*  in [Unmasking Deepfakes with simple Features](https://github.com/cc-hpc-itwm/DeepFakeDetection). 
 
 The goal of this framework is to offer an easy and accessible platform for performing experiments in different settings.
@@ -89,6 +89,8 @@ precomputed test features of the same dataset are `xray_test.pkl```
 
 All of the five example will output a trained model. Note that for really big datasets (c0, c23) the svm might take a while to train. 
 
+Attention! There is one case that is not working: the case when you already have precomputed training features 
+`--training_set <pkl_file>` but want to compute new test features is not working. We never came across this particular case. 
 
 ## 5. Example: Training on X-ray dataset 
 
