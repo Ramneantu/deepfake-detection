@@ -8,3 +8,4 @@ lightning_logs
 .vscode
 frequency_analysis/runs/*
 frequency_analysis/models
+**/nohup.out
