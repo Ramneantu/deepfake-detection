@@ -23,3 +23,9 @@ We also used the Lime Explainer (https://github.com/marcotcr/lime) in order to u
 
 Some of the explain data can be downloaded here: https://syncandshare.lrz.de/getlink/fiWJXehJXqESXNxopXNUYyNA/
 (note that the explanations took quite some time. Due to shared resources on the server, we did not finish all explanations. But we got an overall idea and think this should be enough.)
+
+## Requirements
+To run this project, please install the following:
+- python 3.7
+- `pytorch==1.9.0+cu102` with `torchvision==0.10.0+cu102`
+- requirements.txt
