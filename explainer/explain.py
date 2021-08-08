@@ -60,6 +60,7 @@ def createDatasetFolder(datasetName, modelNameSpecs):
     if not os.path.exists(dirName):
         os.mkdir(dirName)
     else:
+        return -1
         timeNow = "before" + datetime.now().strftime("%b%d%Y%H:%M:%S")
         old_files = os.path.join(dirName, timeNow)
         dirs = list(filter(lambda x: not(x.startswith("before")),os.listdir(dirName)))
@@ -72,21 +73,26 @@ def createDatasetFolder(datasetName, modelNameSpecs):
     os.mkdir(os.path.join(dirName, "FalseReal"))
     os.mkdir(os.path.join(dirName, "Masks"))
     os.mkdir(os.path.join(dirName, "Explainer"))
+    return 0
 
-def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake):
+def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake, transform):
     """
     batch_predict: needs to handle preprocessing and resizing
 
     """
-    createDatasetFolder(datasetName, modelNameSpecs)
+    a = createDatasetFolder(datasetName, modelNameSpecs)
+    if a == -1:
+        print("aborting " + datasetName + " " + modelNameSpecs)
+        return
     explainer = lime_image.LimeImageExplainer()
     logging.basicConfig(filename=os.path.join(datasetName, modelNameSpecs, 'explainInfo.log'), format='%(asctime)s %(message)s', level=logging.INFO)
     logging.info(datasetName + " " + modelNameSpecs)
-    rf = ['real', 'fake']
+    rf = ['real','fake']
     oneFake = lambda x: 1 if x=="fake" else 0
     correct = 0
     incorrect = 0
     total = 0
+    fake_ = oneFake("fake") if oneIsFake else 1-oneFake("fake")
     for kind in rf:
         print(kind)
         kind_val = oneFake(kind) if oneIsFake else 1-oneFake(kind)
@@ -95,16 +101,18 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake):
         im_names = list(filter(isImage, os.listdir(im_dir)))
         for filename in im_names:
             im = get_image(os.path.join(im_dir, filename))
+            if transform is not None:
+                im = transform(im) 
             print(str(c) + " of " + str(len(im_names)))
             c += 1
             total += 1
             explanation = explainer.explain_instance(np.array(im),
-                                                        batch_predict,
-                                                        top_labels=2,
-                                                        hide_color=0,
-                                                        num_samples=5000,
-                                                        batch_size=16)
-            temp, mask = explanation.get_image_and_mask(0, positive_only=False, num_features=15,
+                                                     batch_predict,
+                                                     top_labels=2,
+                                                     hide_color=0,
+                                                     num_samples=1500,
+                                                     batch_size=32)
+            temp, mask = explanation.get_image_and_mask(fake_, positive_only=False, num_features=15,
                                                         hide_rest=False)
             img_boundary = mark_boundaries(temp / 255.0, mask)
             explainedClass = explanation.top_labels[0]
@@ -114,6 +122,8 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake):
             _, pos_mask = explanation.get_image_and_mask(explainedClass, positive_only=True, num_features=15)
 
             classifiedAs = ""
+            #p = batch_predict([np.array(im)])
+            #logging.info(filename + ": " + str(p))
 
             if kind_val == explainedClass:
                 classifiedAs = str(kind_val == explainedClass) + kind.capitalize()
@@ -128,7 +138,7 @@ def explain(datasetName, modelNameSpecs, batch_predict, oneIsFake):
     logging.info("Accuracy = " + str(correct/total))
 
 
-def explainExistingModels(load_model, model_batch_predict, oneIsFake=False):
+def explainExistingModels(load_model, model_batch_predict, oneIsFake=False, transform=None):
     """
     all_models_path: directory of a specific architecture that may have different model/weight files
                 e.g.: XceptionModels --> XceptionTrainedOnFF30k_full.pickle, XceptionTrainedOnCelebA_finetuning.pickle, ...
@@ -152,12 +162,14 @@ def explainExistingModels(load_model, model_batch_predict, oneIsFake=False):
                     explain(os.path.join(args.all_explain_data_path, data), 
                             modelName,
                             model_batch_predict(model),
-                            oneIsFake)
+                            oneIsFake,
+                            transform)
             else:
                 explain(args.explain_data_path, 
                         modelName,
                         model_batch_predict(model),
-                        oneIsFake)
+                        oneIsFake,
+                        transform)
 
 
     else:
@@ -169,9 +181,11 @@ def explainExistingModels(load_model, model_batch_predict, oneIsFake=False):
                 explain(os.path.join(args.explain_data_path, data), 
                         modelName,
                         model_batch_predict(model),
-                        oneIsFake)
+                        oneIsFake,
+                        transform)
         else:
             explain(args.explain_data_path, 
                     modelName,
                     model_batch_predict(model),
-                    oneIsFake)
+                    oneIsFake,
+                    transform)

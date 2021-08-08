@@ -21,6 +21,7 @@ def model_batch_predict(model):
         batch = torch.stack(tuple(preprocess_transform(i) for i in images), dim=0)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        #device = "cpu"
         model.to(device)
         batch = batch.to(device)
 
@@ -32,6 +33,7 @@ def model_batch_predict(model):
 def load_model(model_path):
     model, *_ = model_selection(modelname='xception', num_out_classes=2, dropout=0.5)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    #device = "cpu"
     if model_path is not None:
         model.load_state_dict(torch.load(model_path, map_location=device))
         for i, param in model.named_parameters():
@@ -51,4 +53,4 @@ def load_model_from_object(model_path):
 
 
 if __name__ == '__main__':
-    exp.explainExistingModels(load_model, model_batch_predict, oneIsFake=False)
+    exp.explainExistingModels(load_model, model_batch_predict, oneIsFake=False, transform=get_pil_transform())

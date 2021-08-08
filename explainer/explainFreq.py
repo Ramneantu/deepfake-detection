@@ -63,6 +63,6 @@ def model_batch_predict(model):
 
 
 if __name__ == '__main__':
-    exp.explainExistingModels(load_model, model_batch_predict, oneIsFake=True)
+    exp.explainExistingModels(load_model, model_batch_predict, oneIsFake=False)
 
 
