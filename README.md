@@ -60,7 +60,7 @@ Output:
 
 Here are a few examples of using the framework. We assume that we are running from the terminal. 
 
-1. Training the svm from scratch using a new dataset. 
+1. **Training the svm from scratch using a new dataset. **
 
 `python3 -m classify --num_files 3000 --data_path <path_to_dataset>`
    - This will train a new project with images from `<path_to_dataset>/train` and test with images 
@@ -69,20 +69,20 @@ from `<path_to_dataset>/test`
 - It will use for training 3000 real images and 3000 fake images (6000 in total)
 - It will automatically save in `./models` the trained model 
 
-2. Training the nn from scratch with a new dataset. 
+2. **Training the nn from scratch with a new dataset.** 
 `python3 -m classify --num_files 3000 --data_path <path_to_dataset> --solver nn`
    
 - Same as above, but set the flag `--solver` to "nn"
 
-3. Train from scratch and save training features for later use 
+3. **Train from scratch and save training features for later use** 
 `python3 -m classify --num_files 3000 --data_path <path_to_dataset> --save_features svm_train.pkl`
    
 - same as above and you can save the features used for training in `./data/features`
 
-4. Train from scratch and save test features
+4. **Train from scratch and save test features**
 `python3 -m classify --num_files 3000 --data_path <path_to_dataset> --save_test_features svm_test.pkl`
 
-5. Train using precomputed train and test features 
+5. **Train using precomputed train and test features** 
 - assume the precomputed train features of the dataset X-ray are `xray_train.pkl` and the 
 precomputed test features of the same dataset are `xray_test.pkl```
 
