@@ -9,11 +9,15 @@ What we need:
 What the script outputs: A new subdirectory in c0Explain that contains the predictions (true and false positives/negatives, and their corresponding lime explanation segments.)
 
 Visually depicted:
-![Semantic description of image](/images/path/to/folder/image.png)
+
+![Semantic description of image](ExplainerStructure.png)
 
 
 ## Modules and Scripts
 
-### explain.py
-wrapper that handles the explanation procedure.
+- explain.py: wrapper that handles the explanation procedure.
+- explainFreq.py: module that calls explain.py and implements the loaders and transformations for the SVM and NN frequency analyzers.
+- explainFreq.py: module that calls explain.py and implements the loaders and transformations for the XceptionNet.
+- subsampleImg.py: helper that was used to subsample from given image folders
+
 
