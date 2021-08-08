@@ -17,7 +17,17 @@ Visually depicted:
 
 - explain.py: wrapper that handles the explanation procedure.
 - explainFreq.py: module that calls explain.py and implements the loaders and transformations for the SVM and NN frequency analyzers.
-- explainFreq.py: module that calls explain.py and implements the loaders and transformations for the XceptionNet.
+- explainXception.py: module that calls explain.py and implements the loaders and transformations for the XceptionNet.
 - subsampleImg.py: helper that was used to subsample from given image folders
+- runExplain.sh: script that actually performs everything.
 
+## How to Use
+1. create directory with explaindata (with real and fake subfolders containing images)
+2. have a model of either XceptionNet oder FrequencyAnalyzer
+3. run a command in the form:
+```
+python explainXception.py -mp <ModelPath> -ed <ExplainDataPath>
+or
+python explainFreq.py -mp <ModelPath> -ed <ExplainDataPath>
+```
 
