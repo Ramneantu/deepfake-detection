@@ -1,25 +1,20 @@
+"""
+Trains an XceptionNet to classify deepfakes from real images.
+Based on the FaceForensics++ implementation: https://github.com/ondyari/FaceForensics
+"""
+
 import copy
 import os
 import argparse
 import sys
 import time
-from os.path import join
-import cv2
-import glob
-import dlib
 import torch
-import random
 import torch.nn as nn
-from PIL import Image as pil_image
 from tqdm import tqdm
 import torch.optim as optim
 from torchvision import datasets
-import math
-import numpy as np
-import pathlib
 import logging
 import datetime
-from PIL import Image
 import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 
@@ -38,6 +33,14 @@ DATASETS = {
 
 
 def load_model(model_path, full = False):
+    """
+    Loads a pretrained model an freezes weights or initializes model with ImageNet weights and makes it trainable.
+    If a GPU is available, model is loaded onto GPU.
+    @param model_path: pretrained xception model to be loaded. If None,
+                        model is initialized with ImageNet weights and layers are trainable
+    @param full: if set to true, all the layer of network are trainable. If false, only last layer, rest are frozen
+    @return: model and the device of the model
+    """
     model, *_ = model_selection(modelname='xception', num_out_classes=2, dropout=0.5)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if model_path is not None:
@@ -48,7 +51,7 @@ def load_model(model_path, full = False):
         print('Model found in {}'.format(model_path))
         logging.info('Model found in {}'.format(model_path))
     else:
-        # Loads ImageNet model and continues training
+        # Loads ImageNet model and sets the trainable layers
         print('No model found, initializing random model.')
         if not full:
             model.set_trainable_up_to(False, "last_linear")
@@ -64,10 +67,12 @@ def load_model(model_path, full = False):
 
 
 def test_model(model, dataloaders, device):
-
+    """
+    Tests the model and logs the accuracy to the log file
+    """
     model.eval()
     running_corrects = 0
-    # Iterate over data.
+
     for inputs, labels in dataloaders['test']:
         inputs = inputs.to(device)
         labels = labels.to(device)
@@ -193,7 +198,7 @@ def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25,
                         optimizer.step()
 
                 # statistics
-                # changed accumulation vars to free memory. Gradients are not computed
+                # casted accumulation vars to free memory. Gradients are not computed
                 running_loss_epoch += float(loss.item() * inputs.size(0))
                 running_corrects_epoch += float(torch.sum(torch.eq(preds, labels)))
 
@@ -264,14 +269,12 @@ if __name__ == '__main__':
     dataset = args.dataset if args.dataset is not None else img_path.split('/')[-1]
     writer = SummaryWriter(os.path.join('../data/cnn-runs', dataset, "finetuning" if args.full else "feature_extraction", datetime.datetime.now().strftime("%Y%m%d-%H%M%S")))
     if args.model_path == None:
-        # img_path = DATASETS[args.dataset] if args.dataset is not None else args.img_path
         model, dataloaders, criterion, optimizer, device = setup_training(img_path, args.model_path, args.full, args.batch_size)
         model, val_history = train_model(model, dataloaders, criterion, optimizer, device, args.epochs, args.early_stopping, args.lr_decay)
         save_model(model, dataset, args.full, len(val_history))
         test_model(model, dataloaders, device)
     else:
         model, device = load_model(args.model_path, args.full)
-        # img_path = DATASETS[args.dataset]
         dataloaders = initialize_dataloaders(img_path, args.batch_size)
         test_model(model, dataloaders, device)
     writer.close()

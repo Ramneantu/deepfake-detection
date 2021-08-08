@@ -1,8 +1,6 @@
 """
 Extracts images from (compressed) videos, used for the FaceForensics++ dataset
-Usage: see -h or https://github.com/ondyari/FaceForensics
-Author: Andreas Roessler
-Date: 25.01.2019
+Based on https://github.com/ondyari/FaceForensics
 """
 import os
 from os.path import join
@@ -23,6 +21,9 @@ DATASET_PATHS = {
 COMPRESSION = ['c0', 'c23', 'c40']
 
 def get_boundingbox(face, width, height, scale=1.3, minsize=None):
+    """
+    Get dimensions a bounding box around the face using dlib
+    """
     x1 = face.left()
     y1 = face.top()
     x2 = face.right()
@@ -68,7 +69,6 @@ def extract_frames(data_path, output_path, image_prefix, frame_count = 1):
         face = faces[0]
         x, y, size = get_boundingbox(face, width, height, scale=1.5)
         cropped_face = image[y:y+size, x:x+size]
-        # resized_face = cv2.resize(cropped_face, (128, 128))
         cv2.imwrite(join(output_path, '{}_{:04d}.jpg'.format(image_prefix, frame)),
                     cropped_face)
         c += 1

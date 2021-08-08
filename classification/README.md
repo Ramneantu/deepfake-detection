@@ -31,12 +31,24 @@ python classify_xception.py
 - For more details on the evolution of the loss use tensorboard to open `data/cnn-runs`
 - The console output visualizes the progress of the training
 
-## Replicate all our experiments
+### Examples
+
+To finetune (update all the weights) a model for at most 30 epochs on the HQ dataset, 
+with early stopping set to 5 epochs, use the following command:
+```shell
+python classify_exception.py -d HQ -l -e 30 --early_stopping 5 -bs 32
+```
+To test the accuracy of a pretrained net, a model path must be given:
+```shell
+python classify_exception.py -d HQ -mi ../data/models/xception_HQ_e6_finetuning
+```
+
+### Replicate all our experiments
 
 Populate the `proj-4/data` folder with all the datasets. Run the `proj-4/classification/run_all.sh` script.
 
 ## Requirements
-
+ 
 - python 3.7
 - `pytorch==1.9.0+cu102` with `torchvision==0.10.0+cu102`
 - requirements.txt
