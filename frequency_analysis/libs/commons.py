@@ -16,14 +16,10 @@ def dataset_split(data: np.ndarray, label: np.ndarray, train_p, with_testset=Fal
     dataset = FreqDataset(data, label)
     total_size = len(dataset)
 
-    if with_testset is True:
-        return random_split(dataset, [round(total_size * train_p),
-                                      round(total_size * (1 - train_p)/2),
-                                      total_size - round(total_size * train_p) - round(total_size * (1 - train_p)/2)])
-    else:
-        train_dataset, val_dataset = random_split(dataset, [round(total_size * train_p),
-                                                            round(total_size * (1 - train_p))])
-        return train_dataset, val_dataset, None
+    train_dataset, val_dataset = random_split(dataset, [round(total_size * train_p),
+                                                        round(total_size * (1 - train_p))])
+    return train_dataset, val_dataset
+
 
 def get_frequencies(img: np.ndarray, epsilon: float):
     """

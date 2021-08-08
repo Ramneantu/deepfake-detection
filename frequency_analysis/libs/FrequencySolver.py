@@ -8,28 +8,23 @@ from .freq_nn import DeepFreq
 import glob
 from matplotlib import pyplot as plt
 import pickle
-from PIL import Image as pil_image
-import os
 
 from sklearn.svm import SVC
-from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 
-from absl import app, flags, logging
+from absl import logging
 from absl.flags import FLAGS
 
 import torch
-from torch.nn import functional as F
-from torch import nn
-from torchsummary import summary
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+import os
 
 
 class FrequencySolver:
     def __init__(
-            self, num_iter: int = 500, features: int = 300, epsilon: float = 1e-8
+            self, features: int = 300, epsilon: float = 1e-8
     ):
         """
         Object used for data preprocessing and training
@@ -39,20 +34,24 @@ class FrequencySolver:
 
         Other parameter:
         - saved_data: pickle object with trained dataset
-        - data: the azimutahl averages computed for all images
+        - data: the azimutahl averages computed for all images, train set
+        - test_data: same as data, but for the test set
         - mean: mean value of azimuthal average for each feature
         - std: std of azimuthal average for each feature
         where one feature represents one frequency value
         """
-        self.num_iter = num_iter
         self.features = features
         self.epsilon = epsilon
+        self.classifier = None
+        self.name = None
+        self.type = None
         self.data = {}
+        self.test_data = {}
         self.mean = {}
         self.std = {}
 
-    def __call__(self, compute_data: bool = True, reals_path=None, fakes_path=None,
-                 saved_data: str = None, crop: bool = True, **kwargs):
+    def __call__(self, reals_path=None, fakes_path=None,
+                 training_features: str = None, **kwargs):
         """"
         If data is precomputed and save, load it
         If data is new, use paths to load it and process it
@@ -62,29 +61,32 @@ class FrequencySolver:
         :param saved_data: pickle file with saved data
         :param crop: set to true if while processing you wish to crop the face area
         """
-        self.compute_data_flag = compute_data
         self.reals_path = reals_path
         self.fakes_path = fakes_path
-        self.saved_data = saved_data
-        self.crop = crop
+        self.training_features = training_features
+
+        # Assuming that reals path is something like .../dataset_name/train/real
+        if reals_path is not None:
+            self.name = reals_path.split('/')[-3]
+        else:
+            self.name = training_features.split('.')[0]
 
         # sanity checks
-        if compute_data is True and ((reals_path is None) or (fakes_path is None)):
+        if training_features is None and ((reals_path is None) or (fakes_path is None)):
             raise Exception('No data path given')
 
-        if compute_data is False and saved_data is None:
-            raise Exception('No saved data is given')
-
         # compute data or load data
-        if compute_data is True:
+        if training_features is None:
             # fake data has label 0 and real data has label 1
-            reals_data, reals_label = self.compute_data(reals_path, label=1, crop=crop)
-            fakes_data, fakes_label = self.compute_data(fakes_path, label=0, crop=crop)
+            print("Processing images...")
+            reals_data, reals_label = self.compute_data(reals_path, label=1, num_files=FLAGS.num_files)
+            fakes_data, fakes_label = self.compute_data(fakes_path, label=0, num_files=FLAGS.num_files)
             self.data["data"] = np.concatenate((reals_data, fakes_data), axis=0)
             self.data["label"] = np.concatenate((reals_label, fakes_label), axis=0)
         else:
             # if features have been precomputed, load them
-            pkl_file = open('./data/' + saved_data, 'rb')
+            print("Loading features...")
+            pkl_file = open('./data/features/' + training_features, 'rb')
             loaded_data = pickle.load(pkl_file)
             pkl_file.close()
             # load data and labels
@@ -102,43 +104,40 @@ class FrequencySolver:
         self.std["reals"] = np.std(reals_data, axis=0)
         self.std["fakes"] = np.std(fakes_data, axis=0)
 
-    def compute_data(self, path, label, crop: bool = True):
+    def compute_data(self, path, label, num_files):
         """
         Function that takes as input dataset and returns azimuthal averages of the frequency spectrum of each image as
         well as the corresponding label
         :param path: where images to be processed can be found
         :param label: 0 for fakes, 1 for true
-        :param crop: true if you wish to crop face area
-        :return:  data : ndarray of shape num_iter x features, processed data
-                  labels:  ndarray of shape num_iter, correct label for each image
+        :param type: could be train or test
+        :return:  data : ndarray of shape num_files x features, processed data
+                  labels:  ndarray of shape num_files, correct label for each image
         """
         print("Started processing dataset at location {}".format(path))
-        print("Processed 0/{} images".format(self.num_iter))
+        print("Processed 0/{} images".format(num_files))
         if label == 1:
-            label = np.ones([self.num_iter])
+            label = np.ones([num_files])
         else:
-            label = np.zeros([self.num_iter])
+            label = np.zeros([num_files])
 
-        # data = np.zeros([self.num_iter, self.features])
-        data = np.zeros(([self.num_iter, 300]))
+        data = np.zeros(([num_files, 300]))
         file_num = 0
 
         for filename in glob.glob(path + "/*"):
             img = cv2.imread(filename, 0)
 
-            if crop:
-                h = img.shape[0] // 3
-                w = img.shape[1] // 3
-                img = img[h:-h, w:-w]
-            images = [img]
-            no_splits = 1
-            # TODO: schimba parametrii in for loop si in method call
-            for split in range(1, no_splits):
-                blocks = commons.split_image(img, 3 * split)
-                images = images + blocks
+            h = img.shape[0] // 3
+            w = img.shape[1] // 3
+            images = [img[h:-h, w:-w]]
+
+            # We don't do the blocks split anymore since it's not better then just cropping
+            # no_splits = 1
+            # for split in range(1, no_splits):
+            #     blocks = commons.split_image(img, 3 * split)
+            #     images = images + blocks
 
             frequencies = [commons.get_frequencies(img, self.epsilon) for img in images]
-            # psd1D = commons.get_frequencies(img, self.epsilon)
             interpolated_array = [commons.interpolate_features(psd1D, self.features, cnt) for (psd1D, cnt) in
                                   zip(frequencies, range(10))]
             interpolated = np.hstack(interpolated_array)
@@ -146,17 +145,17 @@ class FrequencySolver:
             data[file_num, :] = interpolated
             file_num += 1
 
-            if file_num == self.num_iter:
-                print("Processed {}/{} images".format(file_num, self.num_iter))
+            if file_num == num_files:
+                print("Processed {}/{} images".format(file_num, num_files))
                 print("Finished processing dataset\n")
                 break
 
             if file_num % 50 == 0:
-                print("Processed {}/{} images".format(file_num, self.num_iter))
+                print("Processed {}/{} images".format(file_num, num_files))
 
         return data, label
 
-    def train(self, split_dataset: bool = True, test_file: str = 'dataset.pkl', iterations: int = 1):
+    def train(self):
         """
         This is the training function that uses shallow ml classifiers.
         :param split_dataset: If split is True, the function splits one dataset and uses 20% of it for testing. Else, you
@@ -168,90 +167,21 @@ class FrequencySolver:
         Output: (average) accuracy using four different classifiers
         """
         print("Training started!")
-        X = self.data["data"]
-        y = self.data["label"]
+        X_train, y_train = self.data["data"], self.data["label"]
+        svclassifier_r = SVC(C=6.37, kernel='rbf', gamma=0.86, probability=True)
+        svclassifier_r.fit(X_train, y_train)
+        svclassifier_r.parameters_in = self.features
 
-        if split_dataset is False:
-            iterations = 1
-
-            X_train = X
-            y_train = y
-
-            # load pickle object
-            pkl_file = open('./data/' + test_file, 'rb')
-            loaded_data = pickle.load(pkl_file)
-            pkl_file.close()
-
-            # load data and labels
-            X_test = loaded_data["data"]
-            y_test = loaded_data["label"]
-
-            # svclassifier = SVC(kernel='linear')
-            # svclassifier.fit(X_train, y_train)
-
-            svclassifier_r = SVC(C=6.37, kernel='rbf', gamma=0.86)
-            svclassifier_r.fit(X_train, y_train)
-
-            # svclassifier_p = SVC(kernel='poly')
-            # svclassifier_p.fit(X_train, y_train)
-            #
-            # logreg = LogisticRegression(solver='liblinear', max_iter=1000)
-            # logreg.fit(X_train, y_train)
-
-            # SVM = svclassifier.score(X_test, y_test)
-            SVM_r = svclassifier_r.score(X_test, y_test)
-            # SVM_p = svclassifier_p.score(X_test, y_test)
-            # LR = logreg.score(X_test, y_test)
-
-        else:
-            # LR = 0
-            # SVM = 0
-            SVM_r = 0
-            # SVM_p = 0
-
-            for i in range(iterations):
-                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-
-                # svclassifier = SVC(kernel='linear')
-                # svclassifier.fit(X_train, y_train)
-
-                svclassifier_r = SVC(C=6.37, kernel='rbf', gamma=0.86, probability=True)
-                svclassifier_r.fit(X_train, y_train)
-
-                # svclassifier_p = SVC(kernel='poly')
-                # svclassifier_p.fit(X_train, y_train)
-                #
-                # logreg = LogisticRegression(solver='liblinear', max_iter=1000)
-                # logreg.fit(X_train, y_train)
-                #
-                # SVM += svclassifier.score(X_test, y_test)
-                SVM_r += svclassifier_r.score(X_test, y_test)
-                # SVM_p += svclassifier_p.score(X_test, y_test)
-                # LR += logreg.score(X_test, y_test)
-
-        # print("(Average) SVM: " + str(SVM / iterations))
-        print("(Average) SVM_r: " + str(SVM_r / iterations))
-        # print("(Average) SVM_p: " + str(SVM_p / iterations))
-        # print("(Average) LR: " + str(LR / iterations))
-
-        # Finally we save the model
-        # TODO: make a flag for this!
         self.type = "svm"
         self.classifier = svclassifier_r
-        # output_name = './data/models/pretrained_SVM_r.pkl'
-        # output = open(output_name, 'wb')
-        # # pickle.dump(svclassifier_r, output)
-        # pickle.dump(self, output)
-        # output.close()
 
-        if FLAGS.save_results:
-            f = open('./data/results.txt', 'a+')
-            experiment_number = str(FLAGS.experiment_num)
-            f.write("Results for experiment " + experiment_number + "\n" +
-                    # "(Average) SVM: " + str(SVM / iterations) + '\n' +
-                    "(Average) SVM_r: " + str(SVM_r / iterations) + '\n' )
-                    # + "(Average) SVM_p: " + str(SVM_p / iterations) + '\n' +
-                    # "(Average) LR: " + str(LR / iterations) + '\n\n')
+        # Saving the model
+        output_name = './data/models/freq_SVM_' + self.name + '.pkl'
+        output = open(output_name, 'wb')
+        pickle.dump(svclassifier_r, output)
+        output.close()
+        print("Training finished\n")
+
 
     def train_NN(self, with_trainset=False, testset_path=None):
         # Precomputed data is saved in self.data
@@ -263,22 +193,19 @@ class FrequencySolver:
         # print("Device used: {}".format(device))
 
         # Define training, validation (and test) datasets
-        phases = ['train', 'val', 'test']
-        if with_trainset is True:
-            train_dataset, val_dataset, test_dataset = commons.dataset_split(X, y, 0.8, with_testset=True)
-        else:
-            train_dataset, val_dataset, _ = commons.dataset_split(X, y, 0.8)
+        phases = ['train', 'val']
+        train_dataset, val_dataset = commons.dataset_split(X, y, 0.8)
 
-            pkl_file = open('./data/' + testset_path, 'rb')
-            testset = pickle.load(pkl_file)
-            pkl_file.close()
+        # pkl_file = open('./data/' + testset_path, 'rb')
+        # testset = pickle.load(pkl_file)
+        # pkl_file.close()
 
-            test_dataset = FreqDataset(testset["data"].astype(np.float32), testset["label"].astype(np.longlong))
+        # test_dataset = FreqDataset(testset["data"].astype(np.float32), testset["label"].astype(np.longlong))
 
         dataset_dict = {
             'train': train_dataset,
             'val': val_dataset,
-            'test': test_dataset
+            # 'test': test_dataset
         }
 
         # Define some hyperparameters
@@ -288,11 +215,12 @@ class FrequencySolver:
             "batch_size": 256
         }
 
-        freq_logger = TensorBoardLogger(save_dir="lightning_logs")
+        # We used this for debugging, we don't need it anymore
+        # freq_logger = TensorBoardLogger(save_dir="lightning_logs")
 
         early_stop_callback = EarlyStopping(
             monitor='val_loss',
-            patience=20
+            patience=30
         )
 
         def weights_init(m):
@@ -305,10 +233,11 @@ class FrequencySolver:
 
         model.apply(weights_init)
 
-        from torch.utils.tensorboard import SummaryWriter
-        writer = SummaryWriter('runs/freq_net')
-        writer.add_graph(model.to(device="cuda"), torch.Tensor(X[0]).cuda())
-        writer.close()
+        # Again, we used this for logging
+        # from torch.utils.tensorboard import SummaryWriter
+        # writer = SummaryWriter('runs/freq_net')
+        # writer.add_graph(model.to(device="cuda"), torch.Tensor(X[0]).cuda())
+        # writer.close()
 
         # summary(model.cuda(), (1,1400))
         # Dataloader
@@ -323,25 +252,63 @@ class FrequencySolver:
             max_epochs=300,
             gpus=1 if str(device) == 'cuda' else None,
             callbacks=[early_stop_callback],
-            logger=freq_logger,
+            # logger=freq_logger,
         )
 
         # Train
         trainer.fit(model, dataloader_dict['train'], dataloader_dict['val'])
 
         # Test
-        trainer.test(test_dataloaders=dataloader_dict['test'])
+        # trainer.test(test_dataloaders=dataloader_dict['test'])
+        trainer.save_checkpoint("data/models/freq_NN_"+ self.name + ".ckpt")
 
         self.type = "nn"
-        self.classifier_state_dict = model.state_dict()
-        self.parameters_in = model.parameters_in
-        self.parameters_out = model.parameters_out
-        self.h_params = model.h_params
-        self.n_hidden = model.n_hidden
-        # output_name = './data/models/pretrained_NN.pkl'
-        # output = open(output_name, 'wb')
-        # pickle.dump(self, output)
-        # output.close()
+        self.classifier = trainer
+        self.dataloader_dict = dataloader_dict
+
+
+    def test(self, test_features=None):
+        """
+        Test on pretrained model, saved in self.classifier
+        :param test_features: If test features are precomputed, give path here
+        :param save_test_features: Name for file to save test features
+        :return: Accuracy
+        """
+        if test_features is not None:
+            # load pickle object
+            pkl_file = open('./data/features/' + test_features, 'rb')
+            loaded_data = pickle.load(pkl_file)
+            pkl_file.close()
+
+            # load data and labels
+            X_test, y_test = loaded_data["data"], loaded_data["label"]
+        else:
+            print("Processing test images...")
+            reals_path = self.reals_path.replace('train', 'test')
+            fakes_path = self.fakes_path.replace('train', 'test')
+            # num_files_test=  len([name for name in os.listdir(reals_path)])
+            num_files_test = 10
+            reals_data, reals_label = self.compute_data(reals_path, label=1, num_files=num_files_test)
+            fakes_data, fakes_label = self.compute_data(fakes_path, label=0, num_files=num_files_test)
+            X_test = np.concatenate((reals_data, fakes_data), axis=0)
+            y_test = np.concatenate((reals_label, fakes_label), axis=0)
+
+        self.test_data["data"], self.test_data["label"] = X_test, y_test
+        classifier = self.classifier
+        if self.type == "nn":
+            dataset = FreqDataset(X_test.astype(np.float32), y_test.astype(np.longlong))
+            dataloader = torch.utils.data.DataLoader(dataset, batch_size=128, shuffle=False)
+            score  = classifier.test(test_dataloaders=dataloader)
+            print("NN: " + str(score))
+        else:
+            score = classifier.score(X_test, y_test)
+            print("SVM_r: " + str(score))
+
+        if FLAGS.save_results:
+            f = open('./data/results.txt', 'a+')
+            f.write("Results for experiment " + " " + self.type + " " + self.name + "\n" +
+                    "score: " + str(score) + '\n' )
+
 
     def visualize(self):
         """
@@ -368,12 +335,13 @@ class FrequencySolver:
 
         plt.show()
 
-    def save_dataset(self, file_name: str = 'dataset'):
-        if file_name == 'dataset':
-            logging.warning('No specific name given to save inputs')
-        output_name = './data/' + file_name
+    def save_dataset(self, file_name: str = 'dataset', type="train"):
+        output_name = './data/features/' + file_name
         output = open(output_name, 'wb')
-        pickle.dump(self.data, output)
+        if type == 'train':
+            pickle.dump(self.data, output)
+        elif type == 'test':
+            pickle.dump(self.test_data, output)
         output.close()
 
-        logging.info("Data saved in {}".format(output_name))
+        print("Data saved in {}".format(output_name))
