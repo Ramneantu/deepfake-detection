@@ -1,8 +1,10 @@
-**Different fake data generation approaches:**
-- 2 projects are from the Face-Xray paper
-- Face-Xray-master uses a few more processing steps
-- third project, CVPRW2019_Face_Artifacts-master:
-    - they do a few things differently
+**Overall Structure**
+
+1. X-Ray Data Generator: contains all requirements for creating fake data with image processing steps. See description below for more info
+2. XraySimpleDemo: contains simple Xray creation pipeline and demo notebook
+3. XrayDemo: contains Demo of actual processing steps that are used in our final generation pipeline
+4. Backup: contains another approach for image processing and data generation. The approach in there uses face warping instead of looking for similar faces in a database. This was for prototyping and experimenting only - not used in the end.
+
 
 **Face-Xray approach:**
 Given: images of faces, in best case same image sizes and somehow centered
@@ -32,21 +34,3 @@ Similar transformation and mask generation etc.
 
 But instead of step 2. from before (searching for most similar face), the landmarks of ALL faces are transformed into a normalized space (such that all images look similar)
 --> I don't know how well this approach works, I still need to test this
-
-**Adaption of face xray**
-
-I implemented own pipeline that does:
-- given folder of images, extract all facial landmarks and create dict = {face_id: landmarks} for each image. And store it as json
-- in the utils file, I added a function that searches for the nearest face
-- and does the processing steps as in the old repo
---> folders of real and fake images; fakes are created regarding the procedure in the paper (and as mentioned above). See Notebooks for reference.
-
-Face-Xray-master
-
-
-**Requirements**
-See requirements file here
-There may be some additional packages not needed, but this current environment was created only for the project. So this should be as slim as possible.
-
-
-Requirements for Face-Artifacts will be created
