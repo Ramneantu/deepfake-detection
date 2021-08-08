@@ -29,6 +29,9 @@ The more complex paper has additional steps:
 8. down and up sample again
 9. use jpeg comrpession
 
+Here is the pipeline drawn for illustration purposes:
+![Xray pipeline](xray_pipeline.png "Xray Pipeline")
+
 The more complex paper also experiments with different Mask formation algorithms, given the facial landmarks
 
 See Notebooks for reference
