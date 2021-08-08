@@ -1,35 +1,20 @@
-from libs.FrequencySolver import FrequencySolver
 from libs.commons import get_feature_vector
-from absl import app, flags, logging
-from absl.flags import FLAGS
 from libs.freq_nn import DeepFreq
 
 import argparse
 import os
-import cv2
 
 import torch
-import random
-import torch.nn as nn
 import torch.nn.functional as F
 from PIL import Image as pil_image
-from tqdm import tqdm
-import torch.optim as optim
-from torchvision import datasets
-import math
 import numpy as np
-import pathlib
 import logging
 import matplotlib.pyplot as plt
-from PIL import Image
 from lime import lime_image
 from skimage.segmentation import mark_boundaries
 
 import pickle
 
-# from network.models import model_selection
-# from dataset.transform import xception_default_data_transforms, get_pil_transform, get_preprocess_transform
-# from detect_from_video import predict_with_model, get_boundingbox
 
 def load_model(model_path: str=None):
     pkl_file = open(model_path, 'rb')
@@ -41,11 +26,6 @@ def load_model(model_path: str=None):
         model.classifier.eval()
     pkl_file.close()
     return model
-
-
-# def get_image(img_path: str=None):
-#     pass
-#     return None
 
 
 def batch_predict(images):
