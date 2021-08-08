@@ -17,4 +17,7 @@ In order to analyze the abalitiy of generalizing to unseen images, we needed to 
 ### Detectors
 In order to make a comparative analysis, we decided to take 2 different methods. One of them is blackbox (complex CNN that find features itself), the other one is based on image frequency features (we adapted two versions: SVM vs NN).
 - XceptionNet: adapted from FaceForensics++ (http://www.niessnerlab.org/projects/roessler2019faceforensicspp.html), see FaceForensicsAdaptions directory for adaptions.
-- FrequencyAnalyzer: adapted from Unmasking DeepFakes with simple Features, Durall et al. (https://arxiv.org/abs/1911.00686). See Directory frequency_analysis.
+- FrequencyAnalyzer: adapted from Unmasking DeepFakes with simple Features, Durall et al. (https://arxiv.org/abs/1911.00686). See Directory frequency_analysis. For the frequency analyzers, we also have some pipeline that easily cross-tests between the different datasets.
+
+### Explainer
+We also used the Lime Explainer (https://github.com/marcotcr/lime) in order to understand the predictions made for different model-train_data combinations. The directory explainer contains all code relevant for this part
