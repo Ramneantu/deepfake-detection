@@ -5,7 +5,7 @@ This is inspired and based on the work of Durall *et al.*  in [Unmasking Deepfak
 The goal of this framework is to offer an easy and accessible platform for performing experiments in different settings.
 It supports computing the input features from the images, training two classifiers - an **SVM with radial kernel** and a **fully connected NN** and testing to determine the accuracy of the classifier. 
 
-##1. Theoretical Background
+## 1. Theoretical Background
 This is a short introduction. For more details, we refer to [Frequency Jupyter Notebook]() explaining all the steps sequentially. 
 
 ###To get the input features:
@@ -15,7 +15,7 @@ This is a short introduction. For more details, we refer to [Frequency Jupyter N
 - Compute the azimuthal average to get a **one dimensional** input vector 
 
 <figure>
-<img align="center" src="rm_img/azm_avg.png" width="1000"/>
+<img align="center" src="./rm_img/azm_avg.png" width="1000"/>
 <figcaption>Fig. 1: Computing the azimuthal average. Source: Durall et al</figcaption>
 </figure>
 
